@@ -9,7 +9,7 @@ public class DirectMemoryTest {
         ByteBuffer byteBuffer = ByteBuffer.allocateDirect(10 * 1024 * 1024);
 
         //清除
-        ((DirectBuffer)byteBuffer).cleaner().clean();
+        ((DirectBuffer) byteBuffer).cleaner().clean();
 
     }
 }

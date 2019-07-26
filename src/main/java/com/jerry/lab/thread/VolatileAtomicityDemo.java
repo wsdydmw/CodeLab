@@ -10,7 +10,7 @@ public class VolatileAtomicityDemo {
         for (int i = 0; i < 20; i++) {
             new Thread() {
                 public void run() {
-                    for (int j = 0; j < 1000; j++){
+                    for (int j = 0; j < 1000; j++) {
                         counter.increase();
                         finishCountDownLatch.countDown();
                     }

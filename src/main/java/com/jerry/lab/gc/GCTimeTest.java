@@ -1,7 +1,5 @@
 package com.jerry.lab.gc;
 
-import java.util.HashMap;
-
 public class GCTimeTest {
     private static final int _1MB = 1024 * 1024;
 

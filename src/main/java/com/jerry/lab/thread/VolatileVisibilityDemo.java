@@ -1,25 +1,39 @@
 package com.jerry.lab.thread;
 
-public class VolatileVisibilityDemo extends Thread {
+public class VolatileVisibilityDemo {
 
-    public static void main(String[] args) throws Exception {
-        new WorkThread().start();
-        System.out.println("flag is " + WorkThread.flag);
-        //sleep的目的是等待线程启动完毕,也就是说进入run的无限循环体了
-        Thread.sleep(100);
-        WorkThread.flag = true;
-        System.out.println("flag is " + WorkThread.flag);
+    // 共享变量
+    private volatile boolean ready = false;
+
+    public static void main(String[] args) {
+        VolatileVisibilityDemo demo = new VolatileVisibilityDemo();
+        demo.new ReadThread().start();
+        demo.new WriteThread().start();
     }
-}
 
-class WorkThread extends Thread {
-    //静态变量，各线程共享
-    public static volatile boolean flag = false;
+    private class ReadThread extends Thread {
 
-    //无限循环,等待flag变为true时才跳出循环
-    public void run() {
-        while (!flag) {
+        @Override
+        public void run() {
+            System.out.println("[Read Thread]Begin to wait ready signal");
+            while (!ready) {
+            }
+            System.out.println("[Read Thread]Can read now");
         }
-        System.out.println("thread end of run");
+    }
+
+    private class WriteThread extends Thread {
+
+        @Override
+        public void run() {
+            // 使读进程有机会先执行
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ignored) {
+            }
+
+            ready = true;
+            System.out.println("[Write Thread]Ready signal changed");
+        }
     }
 }

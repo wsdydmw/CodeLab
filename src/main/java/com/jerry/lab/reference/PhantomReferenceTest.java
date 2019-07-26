@@ -25,14 +25,14 @@ public class PhantomReferenceTest {
 
     public static void main(String args[]) throws InterruptedException {
         Object obj = new Object();
-        ReferenceQueue<Object> refQueue =new ReferenceQueue<>();
-        WeakReference<Object> phanRef =new WeakReference<>(obj, refQueue);
+        ReferenceQueue<Object> refQueue = new ReferenceQueue<>();
+        WeakReference<Object> phanRef = new WeakReference<>(obj, refQueue);
 
         Object objg = phanRef.get();
         //这里拿到的是null
         System.out.println(objg);
         //让obj变成垃圾
-        obj=null;
+        obj = null;
         System.gc();
         Thread.sleep(3000);
         //gc后会将phanRef加入到refQueue中

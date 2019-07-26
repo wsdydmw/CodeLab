@@ -1,4 +1,4 @@
-package com.jerry.lab.CollectionTest;
+package com.jerry.lab.collection;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

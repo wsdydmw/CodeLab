@@ -23,7 +23,7 @@ public class SortApplication {
             Integer[] desc_numbers = desc_numbers_list.toArray(new Integer[desc_numbers_list.size()]);
 
             System.out.println("--- randow number result ---");
-            ISort sort1 = getSortInstance();
+            SortAdapter sort1 = getSortInstance();
             sort1.loadArray(random_numbers);
 
             begin = System.currentTimeMillis();
@@ -35,7 +35,7 @@ public class SortApplication {
             System.out.println("time use : " + (end - begin) + "ms");
 
             System.out.println("--- asc number result ---");
-            ISort sort2 = getSortInstance();
+            SortAdapter sort2 = getSortInstance();
             sort2.loadArray(asc_numbers);
 
             begin = System.currentTimeMillis();
@@ -47,7 +47,7 @@ public class SortApplication {
             System.out.println("time use : " + (end - begin) + "ms");
 
             System.out.println("--- desc number result ---");
-            ISort sort3 = getSortInstance();
+            SortAdapter sort3 = getSortInstance();
             sort3.loadArray(desc_numbers);
 
             begin = System.currentTimeMillis();
@@ -61,7 +61,7 @@ public class SortApplication {
 
     }
 
-    public static ISort getSortInstance() {
+    public static SortAdapter getSortInstance() {
         return new HeapSort();
     }
 }

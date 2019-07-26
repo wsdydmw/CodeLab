@@ -19,7 +19,7 @@ public class KnapsackProblemDynamicPlanning {
         for (int itemIndex = 1; itemIndex < items.length; itemIndex++) {
             // 将当前物品装入背包
             for (int j = weight - items[itemIndex]; j >= 0; j--) {
-                if (states[j] !=  null) {
+                if (states[j] != null) {
                     Knapsack knapsack = cloner.deepClone(states[j]);
                     knapsack.add(items[itemIndex]);
                     states[j + items[itemIndex]] = knapsack;
