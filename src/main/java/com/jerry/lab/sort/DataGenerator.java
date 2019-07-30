@@ -11,7 +11,7 @@ public class DataGenerator {
     ;
 
     public static void main(String[] args) {
-        int size = 10000;
+        int size = 1000000;
 
         try (BufferedWriter bw1 = new BufferedWriter(new FileWriter("random_numbers"));
              BufferedWriter bw2 = new BufferedWriter(new FileWriter("asc_numbers"));

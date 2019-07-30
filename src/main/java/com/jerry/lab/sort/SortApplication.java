@@ -8,15 +8,16 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class SortApplication {
+    static int MAX_NUMBER_SIZE = 10000;
 
     public static void main(String[] args) throws IOException {
         long begin, end;
         try (BufferedReader random_br = new BufferedReader(new FileReader("data/random_numbers"));
              BufferedReader asc_br = new BufferedReader(new FileReader("data/asc_numbers"));
              BufferedReader desc_br = new BufferedReader(new FileReader("data/desc_numbers"))) {
-            List<Integer> random_numbers_list = Arrays.stream(random_br.readLine().split(",")).map(Integer::valueOf).collect(Collectors.toList());
-            List<Integer> asc_numbers_list = Arrays.stream(asc_br.readLine().split(",")).map(Integer::valueOf).collect(Collectors.toList());
-            List<Integer> desc_numbers_list = Arrays.stream(desc_br.readLine().split(",")).map(Integer::valueOf).collect(Collectors.toList());
+            List<Integer> random_numbers_list = Arrays.stream(random_br.readLine().split(",")).limit(MAX_NUMBER_SIZE).map(Integer::valueOf).collect(Collectors.toList());
+            List<Integer> asc_numbers_list = Arrays.stream(asc_br.readLine().split(",")).limit(MAX_NUMBER_SIZE).map(Integer::valueOf).collect(Collectors.toList());
+            List<Integer> desc_numbers_list = Arrays.stream(desc_br.readLine().split(",")).limit(MAX_NUMBER_SIZE).map(Integer::valueOf).collect(Collectors.toList());
 
             Integer[] random_numbers = random_numbers_list.toArray(new Integer[random_numbers_list.size()]);
             Integer[] asc_numbers = asc_numbers_list.toArray(new Integer[asc_numbers_list.size()]);
