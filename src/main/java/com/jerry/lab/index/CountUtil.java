@@ -13,6 +13,10 @@ public class CountUtil {
         count.incrementAndGet();
     }
 
+    public static void addOperateCount(int num) {
+        count.addAndGet(num);
+    }
+
     public static int getOperateCount() {
         return count.get();
     }
