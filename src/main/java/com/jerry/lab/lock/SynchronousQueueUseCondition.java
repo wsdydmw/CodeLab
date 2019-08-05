@@ -1,4 +1,4 @@
-package com.jerry.lab.Lock;
+package com.jerry.lab.lock;
 
 import java.time.Instant;
 import java.util.LinkedList;
