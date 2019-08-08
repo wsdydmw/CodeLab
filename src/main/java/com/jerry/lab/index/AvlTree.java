@@ -162,10 +162,7 @@ class AvlNodeUtil {
 
     private static void refreshHeight(AvlNode node) {
         CountUtil.addOperateCount();
-        System.out.println("refresg " + node.key);
-        System.out.println("height 1 is " + node.height);
         node.height = Math.max(height(node.left), height(node.right)) + 1;
-        System.out.println("height 2 is " + node.height);
     }
 
     private static AvlNode reBalance(AvlNode node) {

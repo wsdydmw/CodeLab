@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class IndexApplication {
     static int MAX_NUMBER_SIZE = 10000;
@@ -22,25 +23,36 @@ public class IndexApplication {
             index.load(random_numbers);
             System.out.println("loaded number size : " + random_numbers.length);
 
-            for (int i = 0; i < 30; i++) {
-                int key = DataGenerator.getRandomNumber();
-                if (i / 10 == 0) {
-                    CountUtil.initOperateCount();
-                    index.insertWithCheck(key);
-                    System.out.println("insert " + key + ", operate count : " + CountUtil.getOperateCount());
-                } else if (i / 10 == 1) {
-                    CountUtil.initOperateCount();
-                    System.out.println("find " + key + " at " + index.find(key) + ", operate count : " + CountUtil.getOperateCount());
-                } else {
-                    CountUtil.initOperateCount();
-                    index.deleteWithCheck(key);
-                    System.out.println("delete " + key + ", operate count : " + CountUtil.getOperateCount());
-                }
-            }
+            Stream.generate(DataGenerator :: getRandomNumber).limit(10)
+                    .forEach(key -> {
+                        CountUtil.initOperateCount();
+                        long begin = System.nanoTime();
+                        index.insertWithCheck(key);
+                        long end = System.nanoTime();
+                        System.out.println("insert " + key + ", operate count : " + CountUtil.getOperateCount() + ", time use : " + (end - begin) + "ns");
+                    });
+
+            Stream.generate(DataGenerator :: getRandomNumber).limit(10)
+                    .forEach(key -> {
+                        CountUtil.initOperateCount();
+                        long begin = System.nanoTime();
+                        int result = index.find(key);
+                        long end = System.nanoTime();
+                        System.out.println("find " + key + " at " + result + ", operate count : " + CountUtil.getOperateCount() + ", time use : " + (end - begin) + "ns");
+                    });
+
+            Stream.generate(DataGenerator :: getRandomNumber).limit(10)
+                    .forEach(key -> {
+                        CountUtil.initOperateCount();
+                        long begin = System.nanoTime();
+                        index.deleteWithCheck(key);
+                        long end = System.nanoTime();
+                        System.out.println("delete " + key + ", operate count : " + CountUtil.getOperateCount() + ", time use : " + (end - begin) + "ns");
+                    });
         }
     }
 
     public static IndexAdapter getIndexInstance() {
-        return new BinarySearchTree();
+        return new AvlTree();
     }
 }
