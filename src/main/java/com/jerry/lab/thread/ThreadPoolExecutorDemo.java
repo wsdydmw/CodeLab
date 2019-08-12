@@ -39,6 +39,6 @@ class workThread implements Runnable {
             e.printStackTrace();
         }
 
-        System.out.println("[" + LocalDateTime.now().toLocalTime() + "][" + Thread.currentThread().getId() + "]" + this.order);
+        System.out.println("work order[" + order + "] running at thread " + Thread.currentThread().getId() + ", end at " + LocalDateTime.now().toLocalTime());
     }
 }

@@ -2,7 +2,7 @@ package com.jerry.lab.index;
 
 import java.util.Arrays;
 
-public class RedBlackTree extends IndexAdapter{
+public class RedBlackTree extends IndexAdapter {
     private RedBlackNode root;
 
     public int find(int key) {

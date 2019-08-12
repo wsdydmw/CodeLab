@@ -23,7 +23,7 @@ public class IndexApplication {
             index.load(random_numbers);
             System.out.println("loaded number size : " + random_numbers.length);
 
-            Stream.generate(DataGenerator :: getRandomNumber).limit(10)
+            Stream.generate(DataGenerator::getRandomNumber).limit(10)
                     .forEach(key -> {
                         CountUtil.initOperateCount();
                         long begin = System.nanoTime();
@@ -32,7 +32,7 @@ public class IndexApplication {
                         System.out.println("insert " + key + ", operate count : " + CountUtil.getOperateCount() + ", time use : " + (end - begin) + "ns");
                     });
 
-            Stream.generate(DataGenerator :: getRandomNumber).limit(10)
+            Stream.generate(DataGenerator::getRandomNumber).limit(10)
                     .forEach(key -> {
                         CountUtil.initOperateCount();
                         long begin = System.nanoTime();
@@ -41,7 +41,7 @@ public class IndexApplication {
                         System.out.println("find " + key + " at " + result + ", operate count : " + CountUtil.getOperateCount() + ", time use : " + (end - begin) + "ns");
                     });
 
-            Stream.generate(DataGenerator :: getRandomNumber).limit(10)
+            Stream.generate(DataGenerator::getRandomNumber).limit(10)
                     .forEach(key -> {
                         CountUtil.initOperateCount();
                         long begin = System.nanoTime();

@@ -256,8 +256,7 @@ class AvlNode {
     public String toString() {
         if (height == 0) {
             return String.valueOf(key);
-        }
-        else {
+        } else {
             return key + "[" + height + ", " + (left != null ? left : "") + " , " + (right != null ? right : "") + "]";
         }
 
