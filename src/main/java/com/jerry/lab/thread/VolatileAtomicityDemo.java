@@ -1,6 +1,7 @@
 package com.jerry.lab.thread;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class VolatileAtomicityDemo {
     static CountDownLatch finishCountDownLatch = new CountDownLatch(20 * 1000);
@@ -20,12 +21,13 @@ public class VolatileAtomicityDemo {
         }
 
         finishCountDownLatch.await();
-        System.out.println("result is " + counter.get());
+
+        System.out.println("result is " + (counter.get() == 20 * 1000 ? "correct" : "wrong"));
     }
 }
 
 class Counter {
-    private volatile int inc = 0;
+    private int inc = 0;
 
     public synchronized void increase() {
         inc++;
