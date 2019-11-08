@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.util.LinkedList;
 import java.util.Queue;
 
-public class SynchronousQueueUseWaitNotify {
+public class QueueUseWaitNotify {
     public static void main(String[] args) {
         Queue<Long> queue = new LinkedList<Long>();
         int maxSize = 1;

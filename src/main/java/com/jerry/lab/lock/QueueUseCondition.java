@@ -7,7 +7,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class SynchronousQueueUseCondition {
+public class QueueUseCondition {
     public static void main(String args[]) {
         Queue<Long> queue = new LinkedList<Long>();
 
