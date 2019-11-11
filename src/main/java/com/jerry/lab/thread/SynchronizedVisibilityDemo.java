@@ -17,7 +17,7 @@ public class SynchronizedVisibilityDemo {
             System.out.println("[Read Thread]Begin to wait ready signal");
             while (true) {
                 synchronized (this) {
-                    if(ready) {
+                    if (ready) {
                         break;
                     }
                 }

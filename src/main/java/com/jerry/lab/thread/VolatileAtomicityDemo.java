@@ -1,7 +1,6 @@
 package com.jerry.lab.thread;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class VolatileAtomicityDemo {
     static CountDownLatch finishCountDownLatch = new CountDownLatch(20 * 1000);

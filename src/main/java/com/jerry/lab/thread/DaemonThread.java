@@ -6,6 +6,18 @@ import java.util.concurrent.ArrayBlockingQueue;
 public class DaemonThread {
     static ArrayBlockingQueue<String> queue = new ArrayBlockingQueue<>(100);
 
+    public static void main(String[] args) {
+        DaemonThread daemonThread = new DaemonThread();
+        InputThread inputThread = daemonThread.new InputThread();
+        inputThread.start();
+
+        PrintThread printThread = daemonThread.new PrintThread();
+        printThread.setDaemon(true);
+        printThread.start();
+
+        System.out.println("退出");
+    }
+
     class InputThread extends Thread {
 
         @Override
@@ -37,17 +49,5 @@ public class DaemonThread {
                 }
             }
         }
-    }
-
-    public static void main(String[] args) {
-        DaemonThread daemonThread = new DaemonThread();
-        InputThread inputThread = daemonThread.new InputThread();
-        inputThread.start();
-
-        PrintThread printThread = daemonThread.new PrintThread();
-        printThread.setDaemon(true);
-        printThread.start();
-
-        System.out.println("退出");
     }
 }

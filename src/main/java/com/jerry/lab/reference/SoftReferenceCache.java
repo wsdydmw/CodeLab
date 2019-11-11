@@ -11,14 +11,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * 基于软引用实现缓存，当内存不够时，可被方便回收掉，以避免OOM
  */
 public class SoftReferenceCache<K, V> {
-    public static void main(String[] args) {
-        SoftReferenceCache<String, String[]> cache = new SoftReferenceCache<>();
-
-        for (int i = 0; i < 3000; i++) {
-            cache.put(String.valueOf(i), new String[1024]);
-        }
-    }
-
     private Map<K, InnerSoftReference<V>> cache; // 缓存对象池，<K, R->V>
     private ReferenceQueue<V> queue; // 引用队列，当GC执行后被回收的缓存对象的软引用将被入队，以方便从缓存池中清除失效的软引用。
     private ReadWriteLock lock; // 读写锁
@@ -27,6 +19,14 @@ public class SoftReferenceCache<K, V> {
         cache = new HashMap<K, InnerSoftReference<V>>();
         queue = new ReferenceQueue<V>();
         lock = new ReentrantReadWriteLock(false);
+    }
+
+    public static void main(String[] args) {
+        SoftReferenceCache<String, String[]> cache = new SoftReferenceCache<>();
+
+        for (int i = 0; i < 3000; i++) {
+            cache.put(String.valueOf(i), new String[1024]);
+        }
     }
 
     /**

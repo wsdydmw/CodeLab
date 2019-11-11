@@ -2,23 +2,20 @@ package com.jerry.lab.index;
 
 import java.util.Arrays;
 
+enum Color {
+    RED, BLACK;
+
+    public Color opposite() {
+        if (this.equals(RED)) {
+            return BLACK;
+        } else {
+            return RED;
+        }
+    }
+}
+
 public class RedBlackTree extends IndexAdapter {
     private RedBlackNode root;
-
-    public int find(int key) {
-        return RedBlackNodeUtil.get(root, key);
-    }
-
-    public void insert(int key) {
-        root = RedBlackNodeUtil.put(root, key);
-        root.color = Color.BLACK;
-    }
-
-    public void delete(int key) {
-        root = RedBlackNodeUtil.delete(root, key);
-
-    }
-
 
     public static void main(String[] args) {
         RedBlackTree redBlackTree = new RedBlackTree();
@@ -38,6 +35,20 @@ public class RedBlackTree extends IndexAdapter {
         System.out.println("delete 5 ");
         redBlackTree.delete(5);
         RedBlackNodeUtil.print(redBlackTree.root);
+    }
+
+    public int find(int key) {
+        return RedBlackNodeUtil.get(root, key);
+    }
+
+    public void insert(int key) {
+        root = RedBlackNodeUtil.put(root, key);
+        root.color = Color.BLACK;
+    }
+
+    public void delete(int key) {
+        root = RedBlackNodeUtil.delete(root, key);
+
     }
 
     public boolean check() {
@@ -227,17 +238,5 @@ class RedBlackNode {
     public String toString() {
         return key + "[" + color + ", " + (left != null ? left : "") + " , " + (right != null ? right : "") + "]";
 
-    }
-}
-
-enum Color {
-    RED, BLACK;
-
-    public Color opposite() {
-        if (this.equals(RED)) {
-            return BLACK;
-        } else {
-            return RED;
-        }
     }
 }

@@ -3,22 +3,6 @@ package com.jerry.lab.index;
 public class BinarySearchTree extends IndexAdapter {
     private Node root;
 
-    public int find(int key) {
-        return NodeUtil.get(root, key);
-    }
-
-    public void insert(int key) {
-        root = NodeUtil.put(root, key);
-    }
-
-    public void delete(int key) {
-        root = NodeUtil.delete(root, key);
-    }
-
-    public boolean check() {
-        return NodeUtil.isBST(root);
-    }
-
     public static void main(String[] args) {
         BinarySearchTree binarySearchTree = new BinarySearchTree();
         binarySearchTree.insert(2);
@@ -38,6 +22,22 @@ public class BinarySearchTree extends IndexAdapter {
         binarySearchTree.delete(7);
         binarySearchTree.delete(6);
         NodeUtil.print(binarySearchTree.root);
+    }
+
+    public int find(int key) {
+        return NodeUtil.get(root, key);
+    }
+
+    public void insert(int key) {
+        root = NodeUtil.put(root, key);
+    }
+
+    public void delete(int key) {
+        root = NodeUtil.delete(root, key);
+    }
+
+    public boolean check() {
+        return NodeUtil.isBST(root);
     }
 }
 

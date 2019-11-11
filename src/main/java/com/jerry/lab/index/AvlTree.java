@@ -5,6 +5,27 @@ import java.util.Arrays;
 public class AvlTree extends IndexAdapter {
     public AvlNode root;
 
+    public static void main(String[] args) {
+        AvlTree avlTree = new AvlTree();
+
+        int[] keys = new int[]{2, 5, 7, 1, 4, 9};
+        Arrays.stream(keys).forEachOrdered(key -> {
+            System.out.println("insert " + key);
+            avlTree.insert(key);
+            AvlNodeUtil.print(avlTree.root);
+        });
+
+        System.out.println("get 3 " + avlTree.find(3));
+        System.out.println("get 5 " + avlTree.find(5));
+        System.out.println("get 9 " + avlTree.find(9));
+
+        System.out.println("delete 5");
+        avlTree.delete(5);
+        AvlNodeUtil.print(avlTree.root);
+
+
+    }
+
     public void insert(int key) {
         root = AvlNodeUtil.put(root, key);
     }
@@ -29,27 +50,6 @@ public class AvlTree extends IndexAdapter {
         }
 
         return true;
-    }
-
-    public static void main(String[] args) {
-        AvlTree avlTree = new AvlTree();
-
-        int[] keys = new int[]{2, 5, 7, 1, 4, 9};
-        Arrays.stream(keys).forEachOrdered(key -> {
-            System.out.println("insert " + key);
-            avlTree.insert(key);
-            AvlNodeUtil.print(avlTree.root);
-        });
-
-        System.out.println("get 3 " + avlTree.find(3));
-        System.out.println("get 5 " + avlTree.find(5));
-        System.out.println("get 9 " + avlTree.find(9));
-
-        System.out.println("delete 5");
-        avlTree.delete(5);
-        AvlNodeUtil.print(avlTree.root);
-
-
     }
 
 }
@@ -243,14 +243,14 @@ class AvlNodeUtil {
 }
 
 class AvlNode {
+    int key;
+    AvlNode left, right;
+    int height;
+
     AvlNode(int key) {
         this.key = key;
         height = 0;
     }
-
-    int key;
-    AvlNode left, right;
-    int height;
 
     @Override
     public String toString() {
