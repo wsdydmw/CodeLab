@@ -7,15 +7,15 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 public class DataGenerator {
-    static int maxValue = 1000000;
+    static int maxValue = 1000000; // for range
     ;
 
     public static void main(String[] args) {
-        int size = 1000000;
+        int size = 100000;
 
-        try (BufferedWriter bw1 = new BufferedWriter(new FileWriter("random_numbers"));
-             BufferedWriter bw2 = new BufferedWriter(new FileWriter("asc_numbers"));
-             BufferedWriter bw3 = new BufferedWriter(new FileWriter("desc_numbers"))
+        try (BufferedWriter bw1 = new BufferedWriter(new FileWriter("files/sort/random_numbers_100000"));
+             BufferedWriter bw2 = new BufferedWriter(new FileWriter("files/sort/asc_numbers_100000"));
+             BufferedWriter bw3 = new BufferedWriter(new FileWriter("files/sort/desc_numbers_100000"))
         ) {
             StringBuffer sb1 = new StringBuffer();
             StringBuffer sb2 = new StringBuffer();

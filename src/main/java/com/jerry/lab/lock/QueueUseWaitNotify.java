@@ -4,6 +4,9 @@ import java.time.Instant;
 import java.util.LinkedList;
 import java.util.Queue;
 
+/**
+ * 生产者与消费者交替执行，无法实现
+ */
 public class QueueUseWaitNotify {
     public static void main(String[] args) {
         Queue<Long> queue = new LinkedList<Long>();
@@ -36,10 +39,10 @@ class ProducerW extends Thread {
                     System.out.println("Queue have value " + queue.peek() + ", " + super.getName() + " need to wait");
                     try {
                         queue.wait();
-                        System.out.println(super.getName() + " has been notified");
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
+                    System.out.println(super.getName() + " has been notified");
                 }
 
                 try {
@@ -77,10 +80,10 @@ class ConsumerW extends Thread {
 
                     try {
                         queue.wait();
-                        System.out.println(super.getName() + "has been notified");
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
+                    System.out.println(super.getName() + " has been notified");
                 }
 
                 try {

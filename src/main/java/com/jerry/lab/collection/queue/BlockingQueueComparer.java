@@ -1,5 +1,7 @@
 package com.jerry.lab.collection.queue;
 
+import com.jerry.lab.common.Utils;
+
 import java.util.concurrent.*;
 
 public class BlockingQueueComparer {
@@ -7,14 +9,14 @@ public class BlockingQueueComparer {
     static int N = 1000000;
 
     public static void main(String[] args) throws Exception {
-        System.out.println("relationship between length and throughput(items/micro-second)");
         System.out.println("length | LinkedBlockingQueue | ArrayBlockingQueue | SynchronousQueue");
+        System.out.println("-- | -- | -- | --");
         for (int i = 0; i < 3; i++) {
             int length = (i == 0) ? 1 : i * 10;
             System.out.print(length + " | ");
-            System.out.print(doTest(new LinkedBlockingQueue<Integer>(length), N) + " | ");
-            System.out.print(doTest(new ArrayBlockingQueue<Integer>(length), N) + " | ");
-            System.out.print(doTest(new SynchronousQueue<Integer>(), N));
+            System.out.print(Utils.displayNumber(doTest(new LinkedBlockingQueue<Integer>(length), N)) + " | ");
+            System.out.print(Utils.displayNumber(doTest(new ArrayBlockingQueue<Integer>(length), N)) + " | ");
+            System.out.print(Utils.displayNumber(doTest(new SynchronousQueue<Integer>(), N)));
             System.out.println();
         }
 
@@ -47,6 +49,6 @@ public class BlockingQueueComparer {
         }).get();
         t = System.currentTimeMillis() - t;
 
-        return (long) (1000.0 * N / t); // items/micro-second
+        return (long) (1000.0 * N / t); // items/second
     }
 }

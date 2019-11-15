@@ -7,6 +7,7 @@ public abstract class SortAdapter implements ISort {
     Integer[] _array;
 
     public void loadArray(Integer[] array) {
+        count.set(0);
         _array = array;
     }
 

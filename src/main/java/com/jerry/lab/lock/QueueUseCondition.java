@@ -7,6 +7,9 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * 生产者与消费者交替执行
+ */
 public class QueueUseCondition {
     public static void main(String args[]) {
         Queue<Long> queue = new LinkedList<Long>();

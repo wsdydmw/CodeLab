@@ -3,29 +3,23 @@ package com.jerry.lab.thread;
 import java.time.Instant;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class WaitNotifyTest {
     public static void main(String[] args) {
         Queue<Long> buffer = new LinkedList<Long>();
-        int maxSize = 10;
+        int queueSize = 1;
 
-        Thread producer1 = new Producer(buffer, maxSize, "PRODUCER1");
-        Thread producer2 = new Producer(buffer, maxSize, "PRODUCER2");
-        Thread producer3 = new Producer(buffer, maxSize, "PRODUCER3");
-        Thread producer4 = new Producer(buffer, maxSize, "PRODUCER4");
-        Thread consumer1 = new Consumer(buffer, maxSize, "CONSUMER1");
-        Thread consumer2 = new Consumer(buffer, maxSize, "CONSUMER2");
-        Thread consumer3 = new Consumer(buffer, maxSize, "CONSUMER3");
-        Thread consumer4 = new Consumer(buffer, maxSize, "CONSUMER4");
+        ExecutorService executorService = Executors.newCachedThreadPool();
 
-        producer1.start();
-        producer2.start();
-        producer3.start();
-        producer4.start();
-        consumer1.start();
-        consumer2.start();
-        consumer3.start();
-        consumer4.start();
+        for (int i = 1; i <= 4; i++) {
+            if (i % 2 == 0) {
+                executorService.execute(new Producer(buffer, queueSize, "PRODUCER" + i));
+            } else {
+                executorService.execute(new Consumer(buffer, queueSize, "CONSUMER" + i));
+            }
+        }
     }
 }
 
@@ -47,16 +41,17 @@ class Producer extends Thread {
     public void run() {
         while (true) {
             synchronized (queue) {
+                System.out.println(super.getName() + " get lock");
                 while (queue.size() == maxSize) {//使用while而不是if，是因为被唤醒后需要再次检查条件
-                    System.out.println("Queue is full, " + super.getName() + " need to wait");
+                    System.out.println("Queue is full, " + super.getName() + " need to wait and release lock");
 
                     try {
                         queue.wait();
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
+                    System.out.println(super.getName() + " get lock and notified");//注意执行到这一步的，都是已经获取了queue对象锁
                 }
-
 
                 try {
                     sleep((int) (Math.random() * 1000));
@@ -91,14 +86,16 @@ class Consumer extends Thread {
     public void run() {
         while (true) {
             synchronized (queue) {
+                System.out.println(super.getName() + " get lock");
                 while (queue.isEmpty()) {
-                    System.out.println("Queue is empty, " + super.getName() + " need to wait");
+                    System.out.println("Queue is empty, " + super.getName() + " need to wait and release lock");
 
                     try {
                         queue.wait();
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
+                    System.out.println(super.getName() + " get lock and notified");//注意执行到这一步的，都是已经获取了queue对象锁
                 }
 
                 try {

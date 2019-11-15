@@ -5,16 +5,16 @@ import java.util.concurrent.TimeUnit;
 
 public class SynchronousQueueTest {
     public static void main(String[] args) {
-        SynchronousQueue<Integer> queue = new SynchronousQueue<Integer>();// 公平交易
+        SynchronousQueue<Integer> queue = new SynchronousQueue<Integer>(false);// 公平交易
         Producer p1 = new Producer("p1", queue, 10);
         Producer p2 = new Producer("p2", queue, 20);
-        Producer p3 = new Producer("p2", queue, 30);
+        Producer p3 = new Producer("p3", queue, 30);
 
         Consumer c1 = new Consumer("c1", queue);
         Consumer c2 = new Consumer("c2", queue);
         Consumer c3 = new Consumer("c3", queue);
 
-        Object[] objects = new Object[]{p1, p2, c1, p3, c2, c3};
+        Object[] objects = new Object[]{c1, c2, p1, c3, p2, p3};
 
         for (Object o : objects) {
             if (o instanceof Producer) {

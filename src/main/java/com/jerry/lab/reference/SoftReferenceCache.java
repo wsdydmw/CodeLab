@@ -12,7 +12,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class SoftReferenceCache<K, V> {
     private Map<K, InnerSoftReference<V>> cache; // 缓存对象池，<K, R->V>
-    private ReferenceQueue<V> queue; // 引用队列，当GC执行后被回收的缓存对象的软引用将被入队，以方便从缓存池中清除失效的软引用。
+    private ReferenceQueue<V> queue; // 引用队列，当GC执行后，软引用对象InnerSoftReference将被入队，遍历之用以从缓存池中清除失效的key
     private ReadWriteLock lock; // 读写锁
 
     public SoftReferenceCache() {
@@ -109,7 +109,6 @@ public class SoftReferenceCache<K, V> {
 
     /**
      * 数据项，封装了软引用，便于获取对应缓存池中的key
-     *
      * @param <V>
      */
     private class InnerSoftReference<V> extends SoftReference<V> {
