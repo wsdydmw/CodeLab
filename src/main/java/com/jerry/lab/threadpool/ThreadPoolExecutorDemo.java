@@ -1,4 +1,4 @@
-package com.jerry.lab.thread;
+package com.jerry.lab.threadpool;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.CountDownLatch;
@@ -8,12 +8,12 @@ import java.util.concurrent.Executors;
 public class ThreadPoolExecutorDemo {
 
     public static void main(String[] args) throws InterruptedException {
-        int worksNum = 10;
-        ExecutorService executorService = Executors.newCachedThreadPool();
-        CountDownLatch finishCountDown = new CountDownLatch(worksNum);
+        int taskNum = 5;
+        ExecutorService executorService = Executors.newScheduledThreadPool(3);
+        CountDownLatch finishCountDown = new CountDownLatch(taskNum);
 
-        for (int i = 0; i < worksNum; i++) {
-            executorService.execute(new workThread(i));
+        for (int taskNo = 0; taskNo < taskNum; taskNo++) {
+            executorService.execute(new workThread(taskNo));
             finishCountDown.countDown();
         }
 
@@ -33,12 +33,13 @@ class workThread implements Runnable {
 
     @Override
     public void run() {
+        System.out.println("task[" + order + "] begin running at thread " + Thread.currentThread().getId() + ", time is " + LocalDateTime.now().toLocalTime());
         try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
-        System.out.println("work order[" + order + "] running at thread " + Thread.currentThread().getId() + ", end at " + LocalDateTime.now().toLocalTime());
+        System.out.println("task[" + order + "] end running at thread " + Thread.currentThread().getId() + ", time is " + LocalDateTime.now().toLocalTime());
     }
 }
