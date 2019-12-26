@@ -8,35 +8,40 @@ public class BlockingQueueComparer {
     static int N = 5000000;//测试数据量
 
     public static void main(String[] args) throws Exception {
-        System.out.println("length | LinkedBlockingQueue | ArrayBlockingQueue | SynchronousQueue | LinkedTransferQueue");
-        System.out.println("-- | -- | -- | --");
+        System.out.println("length | Linked | Array | Synchronous-noFair | Synchronous-Fair | LinkedTransfer | Linked-C | Array-C | Synchronous-noFair-C | Synchronous-Fair-C | LinkedTransfer-C");
+        System.out.println("-- | -- | -- | -- | -- | -- | -- | -- | -- | -- | --");
         for (int i = 0; i < 10; i++) {
-            int length = (int)Math.pow(3d, (double)i);// queue's length
-            int concurrentDegree = 1;// number of input() and take() threads
+            int length = (int) Math.pow(3d, (double) i);// queue's length
+            int concurrentDegree = 3;// number of input() and take() threads
 
             System.out.print(length + " | ");
+            System.out.print(Utils.displayNumber(doTest(new LinkedBlockingQueue<Integer>(length), 1)) + " | ");
+            System.out.print(Utils.displayNumber(doTest(new ArrayBlockingQueue<Integer>(length), 1)) + " | ");
+            System.out.print(Utils.displayNumber(doTest(new SynchronousQueue<Integer>(false), 1)) + " | ");
+            System.out.print(Utils.displayNumber(doTest(new SynchronousQueue<Integer>(true), 1)) + " | ");
+            System.out.print(Utils.displayNumber(doTest(new LinkedTransferQueue<Integer>(), 1)) + " | ");
             System.out.print(Utils.displayNumber(doTest(new LinkedBlockingQueue<Integer>(length), concurrentDegree)) + " | ");
             System.out.print(Utils.displayNumber(doTest(new ArrayBlockingQueue<Integer>(length), concurrentDegree)) + " | ");
-            System.out.print(Utils.displayNumber(doTest(new SynchronousQueue<Integer>(), concurrentDegree)) + " | ");
-            System.out.print(Utils.displayNumber(doTest(new LinkedTransferQueue<>(), concurrentDegree)));
+            System.out.print(Utils.displayNumber(doTest(new SynchronousQueue<Integer>(false), concurrentDegree)) + " | ");
+            System.out.print(Utils.displayNumber(doTest(new SynchronousQueue<Integer>(true), concurrentDegree)) + " | ");
+            System.out.print(Utils.displayNumber(doTest(new LinkedTransferQueue<Integer>(), concurrentDegree)));
             System.out.println();
         }
     }
 
     private static long doTest(final BlockingQueue<Integer> q, final int concurrentDegree) throws Exception {
-        ExecutorService putExecutorService = Executors.newFixedThreadPool(concurrentDegree);
-        ExecutorService takeExecutorService = Executors.newFixedThreadPool(concurrentDegree);
+        ExecutorService executorService = Executors.newFixedThreadPool(concurrentDegree * 2);
         CountDownLatch lastPutCount = new CountDownLatch(N);
         CountDownLatch lastTakeCount = new CountDownLatch(N);
 
-        long begin = System.currentTimeMillis();
+        long begin = System.nanoTime();
 
-        for(int i = 0; i < concurrentDegree; i++ ) {
+        for (int i = 0; i < concurrentDegree; i++) {
             // put() threads
-            putExecutorService.submit(new Runnable() {
+            executorService.submit(new Runnable() {
                 public void run() {
                     int lastPut = 0;
-                    while ((lastPut = (int)lastPutCount.getCount()) > 0) {
+                    while ((lastPut = (int) lastPutCount.getCount()) > 0) {
                         try {
                             q.put(lastPut);
                             lastPutCount.countDown();
@@ -47,7 +52,7 @@ public class BlockingQueueComparer {
             });
 
             // take() threads
-            takeExecutorService.submit(new Runnable() {
+            executorService.submit(new Runnable() {
                 public void run() {
                     while (lastTakeCount.getCount() > 0) {
                         try {
@@ -64,11 +69,10 @@ public class BlockingQueueComparer {
         lastPutCount.await();
         lastTakeCount.await();
 
-        long cost = System.currentTimeMillis() - begin;
-        long result = (long) (1000.0 * N / cost);// items/second
+        long cost = System.nanoTime() - begin;
+        long result = (long) (1000000000.0 * N / cost);// items/second
 
-        putExecutorService.shutdown();
-        takeExecutorService.shutdown();
+        executorService.shutdown();
 
         return result;
     }
