@@ -1,26 +1,22 @@
 package com.jerry.lab.threadpool;
 
 import java.time.LocalDateTime;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 public class ThreadPoolExecutorDemo {
 
     public static void main(String[] args) throws InterruptedException {
-        int taskNum = 5;
-        ExecutorService executorService = Executors.newScheduledThreadPool(3);
+        int taskNum = 3;
+        ScheduledThreadPoolExecutor executorService = new ScheduledThreadPoolExecutor(taskNum);
         CountDownLatch finishCountDown = new CountDownLatch(taskNum);
 
         for (int taskNo = 0; taskNo < taskNum; taskNo++) {
-            executorService.execute(new workThread(taskNo));
-            finishCountDown.countDown();
+            executorService.scheduleAtFixedRate(new workThread(taskNo), 0, 3 , TimeUnit.SECONDS );
+            //finishCountDown.countDown();
         }
 
-        finishCountDown.await();
-
-        executorService.shutdown();
-
+        //finishCountDown.await();
+        //executorService.shutdown();
     }
 }
 
