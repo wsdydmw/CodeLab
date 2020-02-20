@@ -1,10 +1,11 @@
 package com.jerry.lab.collection.queue;
 
-import java.util.PriorityQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 
 public class PriorityBlockingQueueTest {
     public static void main(String[] args) {
-        PriorityQueue<Integer> priorityQueue = new PriorityQueue<>();
+        BlockingQueue<Integer> priorityQueue = new PriorityBlockingQueue<>();
         priorityQueue.add(9);
         priorityQueue.add(5);
         priorityQueue.add(2);

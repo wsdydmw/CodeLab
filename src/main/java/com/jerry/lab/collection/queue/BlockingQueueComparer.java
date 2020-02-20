@@ -12,7 +12,7 @@ public class BlockingQueueComparer {
         System.out.println("-- | -- | -- | -- | -- | -- | -- | -- | -- | -- | --");
         for (int i = 0; i < 10; i++) {
             int length = (int) Math.pow(3d, (double) i);// queue's length
-            int concurrentDegree = 3;// number of input() and take() threads
+            int concurrentDegree = 10;// number of input() and take() threads
 
             System.out.print(length + " | ");
             System.out.print(Utils.displayNumber(doTest(new LinkedBlockingQueue<Integer>(length), 1)) + " | ");
