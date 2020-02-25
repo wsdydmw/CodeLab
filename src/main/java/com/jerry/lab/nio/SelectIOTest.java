@@ -12,14 +12,14 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class SelectTest {
-    final int clientSize = 5;
+public class SelectIOTest {
+    final int clientSize = 50;
     final CountDownLatch shutDownLatch = new CountDownLatch(clientSize);
     final String address = "127.0.0.1";
     final int port = 8888;
 
     public static void main(String[] args) throws InterruptedException {
-        new BlockingIOTest().process();
+        new SelectIOTest().process();
         System.exit(1);
     }
 
@@ -29,11 +29,13 @@ public class SelectTest {
         executorService.execute(new SelectServerSocketThread());
 
         for (int i = 1; i <= clientSize; i++) {
+            Thread.sleep((long) (Math.random() * 1000));
             executorService.execute(new SelectSocketThread(String.valueOf(i)));
         }
 
         shutDownLatch.await();
         executorService.shutdown();
+        ProcessMonitor.displayUseTime();
 
         return;
     }
@@ -65,7 +67,7 @@ public class SelectTest {
 
         public void listen() throws IOException {
             // 使用轮询访问selector
-            while (true) {
+            while (shutDownLatch.getCount() != 0) {
                 selector.select();
                 Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
 
@@ -83,10 +85,10 @@ public class SelectTest {
                         ByteBuffer buffer = ByteBuffer.allocate(100);
                         channel.read(buffer);
 
-                        String param = new String(buffer.array());
+                        String param = new String(buffer.array()).trim();
                         ProcessMonitor.serverReceived(param);
                         try {
-                            Thread.sleep(3000);
+                            Thread.sleep(100);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
@@ -128,7 +130,7 @@ public class SelectTest {
             channel.connect(new InetSocketAddress(serverIp, port));
 
             selector = Selector.open();
-            SelectionKey key = channel.register(selector, SelectionKey.OP_CONNECT);
+            channel.register(selector, SelectionKey.OP_CONNECT);
         }
 
         public void listen() throws IOException {
@@ -161,7 +163,9 @@ public class SelectTest {
                         ByteBuffer buffer = ByteBuffer.allocate(100);
                         channel.read(buffer);
 
-                        ProcessMonitor.clientReceived(new String(buffer.array()));
+                        String param = new String(buffer.array()).trim();
+                        ProcessMonitor.clientReceived(param);
+                        shutDownLatch.countDown();
                     }
                     keys.remove();
                 }

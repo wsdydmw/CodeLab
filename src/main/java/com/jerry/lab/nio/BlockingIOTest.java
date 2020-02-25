@@ -11,7 +11,7 @@ import java.util.concurrent.Executors;
 
 public class BlockingIOTest {
 
-    final int clientSize = 5;
+    final int clientSize = 50;
     final CountDownLatch shutDownLatch = new CountDownLatch(clientSize);
     final String address = "127.0.0.1";
     final int port = 8888;
@@ -27,11 +27,13 @@ public class BlockingIOTest {
         executorService.execute(new BlockingServerSocketThread());
 
         for (int i = 1; i <= clientSize; i++) {
+            Thread.sleep((long) (Math.random() * 1000));
             executorService.execute(new BlockingSocketThread(String.valueOf(i)));
         }
 
         shutDownLatch.await();
         executorService.shutdown();
+        ProcessMonitor.displayUseTime();
 
         return;
     }
@@ -61,11 +63,11 @@ public class BlockingIOTest {
                 ByteBuffer buffer = ByteBuffer.allocate(100);
                 socketChannel.read(buffer);
 
-                String param = new String(buffer.array());
+                String param = new String(buffer.array()).trim();
 
                 ProcessMonitor.serverReceived(param);
                 try {
-                    Thread.sleep(3000);
+                    Thread.sleep(100);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -114,7 +116,8 @@ public class BlockingIOTest {
                 ByteBuffer buffer = ByteBuffer.allocate(100);
                 try {
                     if (channel.read(buffer) != -1) {
-                        ProcessMonitor.clientReceived(new String(buffer.array()));
+                        String param = new String(buffer.array()).trim();
+                        ProcessMonitor.clientReceived(param);
                         shutDownLatch.countDown();
                         return;
                     }
