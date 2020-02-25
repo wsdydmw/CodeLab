@@ -1,14 +1,10 @@
 package com.jerry.lab.nio;
 
-import sun.java2d.SurfaceDataProxy;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -60,7 +56,7 @@ public class BlockingIOTest {
         }
 
         public void listen() throws IOException {
-            while (shutDownLatch.getCount()!=0) {
+            while (shutDownLatch.getCount() != 0) {
                 SocketChannel socketChannel = serverChannel.accept();
                 ByteBuffer buffer = ByteBuffer.allocate(100);
                 socketChannel.read(buffer);
