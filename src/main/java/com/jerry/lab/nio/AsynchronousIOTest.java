@@ -17,21 +17,27 @@ public class AsynchronousIOTest {
     final byte serverSize = 5;
     final String address = "127.0.0.1";
     final int basePort = 8880;
+    final int serverProcessDelay = 2000;
+    final int networkDelay = 1000;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         new AsynchronousIOTest().process();
     }
 
-    public void process() {
+    public void process() throws InterruptedException {
         ExecutorService executorService = Executors.newCachedThreadPool();
 
         for (byte i = 1; i <= serverSize; i++) {
             executorService.execute(new AsynchronousServerSocketThread(i));
         }
 
+        Thread.sleep(3000);// 等待server启动
         executorService.execute(new AsynchronousSocketThread());
     }
 
+    /**
+     * Server，接受请求，返回自身编号
+     */
     class AsynchronousServerSocketThread implements Runnable {
 
         private AsynchronousChannelGroup group;
@@ -64,7 +70,11 @@ public class AsynchronousIOTest {
             server.accept("first connect", new CompletionHandler<AsynchronousSocketChannel, Object>() {
                 @Override
                 public void completed(AsynchronousSocketChannel channel, Object attachment) {
-                    listen(channel);
+                    try {
+                        listen(channel);
+                    } catch (ExecutionException | InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
 
                 @Override
@@ -81,65 +91,55 @@ public class AsynchronousIOTest {
             }*/
         }
 
-        private void listen(AsynchronousSocketChannel channel) {
+        private void listen(AsynchronousSocketChannel channel) throws ExecutionException, InterruptedException {
             while (true) {
                 ByteBuffer buffer = ByteBuffer.allocate(1);
-                try {
-                    buffer.clear();
-                    Future<Integer> future = channel.read(buffer);
 
-                    //阻塞直至数据到达
-                    future.get();
+                buffer.clear();
+                Future<Integer> future = channel.read(buffer);
 
-                    buffer.flip();
-                    byte param = buffer.get();
+                //阻塞直至数据到达
+                future.get();
 
-                    if (param != order) {
-                        System.out.println("order error " + param + " -> " + order);
-                    }
-                    ProcessMonitor.serverReceived(order);
-                    try {
-                        Thread.sleep((long) Math.random() * 1000);// server process
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                buffer.flip();
+                byte param = buffer.get();
 
-                    buffer.clear();
-                    channel.write(buffer);
-                    ProcessMonitor.serverReturn(order);
-                } catch (InterruptedException | ExecutionException e) {
-                    e.printStackTrace();
+                if (param != order) {
+                    System.out.println("order error ");
                 }
+                ProcessMonitor.serverReceived(order);
+
+                Thread.sleep((long) Math.random() * serverProcessDelay);
+
+                buffer.clear();
+                channel.write(buffer);
+                ProcessMonitor.serverReturn(order);
             }
 
         }
     }
 
+    /**
+     * client，串行方式向多个server发送请求
+     */
     class AsynchronousSocketThread implements Runnable {
 
         @Override
         public void run() {
             for (byte i = 1; i <= serverSize; i++) {
-                link(i);
+                try {
+                    link(i);
+                } catch (InterruptedException | ExecutionException | IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
 
-        private void link(byte order) {
-            AsynchronousSocketChannel socketChannel = null;
-            try {
-                socketChannel = AsynchronousSocketChannel.open();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        private void link(byte order) throws InterruptedException, ExecutionException, IOException {
+            AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open();
             Future<Void> connect = socketChannel.connect(new InetSocketAddress(address, basePort + order));
 
-            try {
-                connect.get();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
+            connect.get();
 
             // 发送消息
             ByteBuffer buffer = ByteBuffer.allocate(1);
@@ -148,22 +148,12 @@ public class AsynchronousIOTest {
             buffer.clear();
             socketChannel.write(buffer);
 
-            try {
-                Thread.sleep((long) Math.random() * 1000);// network delay
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            Thread.sleep((long) Math.random() * networkDelay);
             ProcessMonitor.clientSend(order);
 
 
             Future<Integer> read = socketChannel.read(buffer);
-            try {
-                read.get();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
+            read.get();
 
             socketChannel.read(buffer);
             buffer.flip();

@@ -1,123 +1,104 @@
 package com.jerry.lab.nio;
 
+import java.io.*;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 public class BlockingIOTest {
 
-    /*final int clientSize = 50;
-    final CountDownLatch shutDownLatch = new CountDownLatch(clientSize);
+    final byte serverSize = 5;
     final String address = "127.0.0.1";
-    final int port = 8888;
+    final int basePort = 8880;
+    final int serverProcessDelay = 2000;
+    final int networkDelay = 1000;
 
     public static void main(String[] args) throws InterruptedException {
         new BlockingIOTest().process();
-        System.exit(1);
     }
 
     public void process() throws InterruptedException {
         ExecutorService executorService = Executors.newCachedThreadPool();
 
-        executorService.execute(new BlockingServerSocketThread());
-
-        for (int i = 1; i <= clientSize; i++) {
-            Thread.sleep((long) (Math.random() * 1000));
-            executorService.execute(new BlockingSocketThread(String.valueOf(i)));
+        for (byte i = 1; i <= serverSize; i++) {
+            executorService.execute(new BlockingIOTest.BlockingServerSocketThread(i));
         }
 
-        shutDownLatch.await();
-        executorService.shutdown();
-        ProcessMonitor.displayUseTime();
-
-        return;
+        Thread.sleep(3000);// 等待server启动
+        executorService.execute(new BlockingIOTest.BlockingSocketThread());
     }
 
     class BlockingServerSocketThread implements Runnable {
 
-        ServerSocketChannel serverChannel;
+        ServerSocket server;
+        private byte order;
+
+        public BlockingServerSocketThread(byte order) {
+            this.order = order;
+        }
 
         @Override
         public void run() {
             try {
-                init(port);
+                init();
                 listen();
-            } catch (IOException e) {
+            } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
         }
 
-        public void init(int port) throws IOException {
-            serverChannel = ServerSocketChannel.open();
-            serverChannel.bind(new InetSocketAddress(port));
+        public void init() throws IOException {
+            server = new ServerSocket(basePort + order);
         }
 
-        public void listen() throws IOException {
-            while (shutDownLatch.getCount() != 0) {
-                SocketChannel socketChannel = serverChannel.accept();
-                ByteBuffer buffer = ByteBuffer.allocate(100);
-                socketChannel.read(buffer);
+        public void listen() throws IOException, InterruptedException {
+            while (true) {
+                Socket socket = server.accept();
 
-                String param = new String(buffer.array()).trim();
+                PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
+                BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-                ProcessMonitor.serverReceived(param);
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                socketChannel.write(ByteBuffer.wrap(param.getBytes()));
-                ProcessMonitor.serverReturn(param);
+                ProcessMonitor.serverReceived(Integer.parseInt(br.readLine()));//阻塞
+
+                Thread.sleep((long) Math.random() * serverProcessDelay);
+
+                pw.println(order);
+                pw.flush();
+                ProcessMonitor.serverReturn(order);
             }
         }
     }
 
     class BlockingSocketThread implements Runnable {
 
-        SocketChannel channel;
-        String param;
-
-        public BlockingSocketThread(String param) {
-            this.param = param;
-        }
+        Socket socket;
 
         @Override
         public void run() {
             try {
-                init(address, port);
-                send();
-                listen();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        public void init(String serverIp, int port) throws IOException {
-            // 获取socket通道
-            channel = SocketChannel.open(new InetSocketAddress(serverIp, port));
-        }
-
-        public void send() {
-            try {
-                channel.write(ByteBuffer.wrap(param.getBytes()));
-                ProcessMonitor.clientSend(param);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        public void listen() {
-            while (true) {
-                ByteBuffer buffer = ByteBuffer.allocate(100);
-                try {
-                    if (channel.read(buffer) != -1) {
-                        String param = new String(buffer.array()).trim();
-                        ProcessMonitor.clientReceived(param);
-                        shutDownLatch.countDown();
-                        return;
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
+                for (byte i = 1; i <= serverSize; i++) {
+                    link(i);
                 }
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
             }
         }
-    }*/
+
+        public void link(byte order) throws IOException, InterruptedException {
+            socket = new Socket(address, basePort + order);
+            PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
+            BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+            pw.println(order);
+            pw.flush();
+            Thread.sleep((long) Math.random() * networkDelay);
+            ProcessMonitor.clientSend(order);
+
+            ProcessMonitor.clientReceived(Integer.parseInt(br.readLine()));//阻塞
+        }
+
+    }
 }
 
 

@@ -27,6 +27,8 @@ public class BlockingQueueComparer {
             System.out.print(Utils.displayNumber(doTest(new LinkedTransferQueue<Integer>(), concurrentDegree)));
             System.out.println();
         }
+
+        System.exit(0);
     }
 
     private static long doTest(final BlockingQueue<Integer> q, final int concurrentDegree) throws Exception {
