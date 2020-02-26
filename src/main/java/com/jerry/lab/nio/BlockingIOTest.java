@@ -1,74 +1,125 @@
 package com.jerry.lab.nio;
 
+import java.io.*;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 public class BlockingIOTest {
 
-    /*final int clientSize = 50;
-    final CountDownLatch shutDownLatch = new CountDownLatch(clientSize);
+    final byte serverSize = 1;
     final String address = "127.0.0.1";
-    final int port = 8888;
+    final int basePort = 8880;
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
         new BlockingIOTest().process();
-        System.exit(1);
     }
 
-    public void process() throws InterruptedException {
+    public void process() {
         ExecutorService executorService = Executors.newCachedThreadPool();
 
-        executorService.execute(new BlockingServerSocketThread());
-
-        for (int i = 1; i <= clientSize; i++) {
-            Thread.sleep((long) (Math.random() * 1000));
-            executorService.execute(new BlockingSocketThread(String.valueOf(i)));
+        for (byte i = 1; i <= serverSize; i++) {
+            executorService.execute(new BlockingIOTest.BlockingServerSocketThread(i));
         }
 
-        shutDownLatch.await();
-        executorService.shutdown();
-        ProcessMonitor.displayUseTime();
-
-        return;
+        //executorService.execute(new BlockingIOTest.SelectSocketThread());
     }
 
     class BlockingServerSocketThread implements Runnable {
 
-        ServerSocketChannel serverChannel;
+        ServerSocket server;
+        private byte order;
+
+        public BlockingServerSocketThread(byte order) {
+            this.order = order;
+        }
 
         @Override
         public void run() {
             try {
-                init(port);
+                init();
                 listen();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
 
-        public void init(int port) throws IOException {
-            serverChannel = ServerSocketChannel.open();
-            serverChannel.bind(new InetSocketAddress(port));
+        public void init() throws IOException {
+            server = new ServerSocket(basePort + order);
         }
 
         public void listen() throws IOException {
-            while (shutDownLatch.getCount() != 0) {
-                SocketChannel socketChannel = serverChannel.accept();
-                ByteBuffer buffer = ByteBuffer.allocate(100);
-                socketChannel.read(buffer);
-
-                String param = new String(buffer.array()).trim();
-
-                ProcessMonitor.serverReceived(param);
+            while (true) {
                 try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
+                    Socket socket = server.accept();
+                    System.out.println("receive connection1,  address:" + server.getInetAddress() + "   port:" + server.getLocalPort());
+                    System.out.println("receive connection,  address:" + socket.getInetAddress() + "   port:" + socket.getLocalPort());
+
+                    //另起线程处理该连接的读写
+                    new DisposeSocketThread(socket).start();
+                    /*PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
+                    System.out.println(1);
+                    BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                    System.out.println(2);
+                    //循环接收和发送
+                    while (true) {
+                        //读取消息
+                        System.out.println("receive msg: ");
+                        System.out.println(br.readLine());
+                        System.out.println(3);
+
+                        //输入消息
+                        System.out.print("send msg:");
+                        BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
+
+                        //发送消息
+                        pw.println(input.readLine());
+                        pw.flush();
+                    }*/
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
-                socketChannel.write(ByteBuffer.wrap(param.getBytes()));
-                ProcessMonitor.serverReturn(param);
             }
         }
     }
 
-    class BlockingSocketThread implements Runnable {
+    static class DisposeSocketThread extends Thread{
+        private Socket socket;
+
+        private DisposeSocketThread(Socket socket){
+            this.socket = socket;
+        }
+
+        @Override
+        public void run() {
+            try{
+                System.out.println(1);
+                PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
+                BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                System.out.println(2);
+                //循环接收和发送
+
+                System.out.println(br.read());
+                while (br.read() != -1) {
+                    //读取消息
+                    System.out.println("receive msg: " + br.readLine());
+                }
+
+                    //输入消息
+                    /*System.out.print("send msg:");
+
+                    //发送消息
+                    pw.println("hello");
+                    pw.flush();*/
+            }catch (Exception e){
+                e.printStackTrace();
+
+            }
+        }
+    }
+
+    /*class BlockingSocketThread implements Runnable {
 
         SocketChannel channel;
         String param;
