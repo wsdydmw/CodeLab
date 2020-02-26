@@ -1,17 +1,8 @@
 package com.jerry.lab.nio;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 public class BlockingIOTest {
 
-    final int clientSize = 50;
+    /*final int clientSize = 50;
     final CountDownLatch shutDownLatch = new CountDownLatch(clientSize);
     final String address = "127.0.0.1";
     final int port = 8888;
@@ -126,7 +117,7 @@ public class BlockingIOTest {
                 }
             }
         }
-    }
+    }*/
 }
 
 
