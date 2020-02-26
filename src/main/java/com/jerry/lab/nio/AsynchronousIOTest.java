@@ -8,30 +8,42 @@ import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 public class AsynchronousIOTest {
-    final byte serverSize = 5;
+    final byte serverSize = 3;
     final String address = "127.0.0.1";
     final int basePort = 8880;
+    final int networdDelay = 1000;//考虑到测试重点在Client，为了不产生影响，网络延迟统一在server端模拟
+    final int clientProcessDelay = 2000;
+    final int serverProcessDelay = 4000;
+    final CountDownLatch serverLatch = new CountDownLatch(serverSize);
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         new AsynchronousIOTest().process();
+        System.exit(0);
     }
 
-    public void process() {
+    public void process() throws InterruptedException {
         ExecutorService executorService = Executors.newCachedThreadPool();
+        ProcessMonitor.begin();
 
         for (byte i = 1; i <= serverSize; i++) {
             executorService.execute(new AsynchronousServerSocketThread(i));
         }
 
+        Thread.sleep(3000);// 等待server启动
         executorService.execute(new AsynchronousSocketThread());
+
+        serverLatch.await();
+        ProcessMonitor.displayProcess();
+        executorService.shutdownNow();
+        return;
     }
 
+    /**
+     * Server，接受请求，返回自身编号
+     */
     class AsynchronousServerSocketThread implements Runnable {
 
         private AsynchronousChannelGroup group;
@@ -64,7 +76,11 @@ public class AsynchronousIOTest {
             server.accept("first connect", new CompletionHandler<AsynchronousSocketChannel, Object>() {
                 @Override
                 public void completed(AsynchronousSocketChannel channel, Object attachment) {
-                    listen(channel);
+                    try {
+                        handleConnect(channel);
+                    } catch (ExecutionException | InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
 
                 @Override
@@ -72,103 +88,103 @@ public class AsynchronousIOTest {
                     System.out.print("get failed. " + exc.getCause());
                 }
             });
-
-            //因为AIO不会阻塞调用进程，因此必须在主进程阻塞，才能保持进程存活。
-            /*try {
-                group.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }*/
         }
 
-        private void listen(AsynchronousSocketChannel channel) {
+        private void handleConnect(AsynchronousSocketChannel channel) throws ExecutionException, InterruptedException {
             while (true) {
                 ByteBuffer buffer = ByteBuffer.allocate(1);
-                try {
-                    buffer.clear();
-                    Future<Integer> future = channel.read(buffer);
 
-                    //阻塞直至数据到达
-                    future.get();
+                // 1. 接收请求
+                buffer.clear();
+                Future<Integer> future = channel.read(buffer);
+                future.get();//阻塞
 
-                    buffer.flip();
-                    byte param = buffer.get();
-
-                    if (param != order) {
-                        System.out.println("order error " + param + " -> " + order);
-                    }
-                    ProcessMonitor.serverReceived(order);
-                    try {
-                        Thread.sleep((long) Math.random() * 1000);// server process
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-
-                    buffer.clear();
-                    channel.write(buffer);
-                    ProcessMonitor.serverReturn(order);
-                } catch (InterruptedException | ExecutionException e) {
-                    e.printStackTrace();
+                buffer.flip();
+                byte param = buffer.get();
+                if (param != order) {
+                    System.out.println("order error ");
                 }
+                Thread.sleep(networdDelay);//模拟网络延迟
+                ProcessMonitor.serverReceived(order);
+
+                // 2. 处理请求
+                Thread.sleep(serverProcessDelay);
+
+                // 3. 返回编号
+                ProcessMonitor.serverReturn(order);
+                Thread.sleep(networdDelay);
+                buffer.clear();
+                channel.write(buffer);
             }
 
         }
     }
 
+    /**
+     * client，串行方式向多个server发送请求
+     */
     class AsynchronousSocketThread implements Runnable {
+
+        private ExecutorService executor;
 
         @Override
         public void run() {
+            init();
             for (byte i = 1; i <= serverSize; i++) {
-                link(i);
+                try {
+                    link(i);
+                } catch (InterruptedException | ExecutionException | IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
 
-        private void link(byte order) {
-            AsynchronousSocketChannel socketChannel = null;
-            try {
-                socketChannel = AsynchronousSocketChannel.open();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        private void init() {
+            executor = Executors.newCachedThreadPool();
+        }
+
+        private void link(byte order) throws InterruptedException, ExecutionException, IOException {
+            AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open();
             Future<Void> connect = socketChannel.connect(new InetSocketAddress(address, basePort + order));
+            connect.get();//阻塞
 
-            try {
-                connect.get();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
-
-            // 发送消息
-            ByteBuffer buffer = ByteBuffer.allocate(1);
-            buffer.put(order);
-
-            buffer.clear();
-            socketChannel.write(buffer);
-
-            try {
-                Thread.sleep((long) Math.random() * 1000);// network delay
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            ProcessMonitor.clientSend(order);
+            //连接之后，执行send
+            FutureTask<Integer> futureTask = new FutureTask<>(new Callable<Integer>() {
+                @Override
+                public Integer call() throws Exception {
 
 
-            Future<Integer> read = socketChannel.read(buffer);
-            try {
-                read.get();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
+                    // 1. 发送请求
+                    ByteBuffer buffer = ByteBuffer.allocate(1);
+                    buffer.put(order);
 
-            socketChannel.read(buffer);
-            buffer.flip();
-            ProcessMonitor.clientReceived(buffer.get());
+                    buffer.clear();
+                    socketChannel.write(buffer);
+                    ProcessMonitor.clientSend(order);
+
+
+                    // 2. 等待结果
+                    buffer.clear();
+                    Future<Integer> read = socketChannel.read(buffer);
+                    read.get();//阻塞
+
+                    socketChannel.read(buffer);
+                    buffer.flip();
+                    ProcessMonitor.clientReceived(buffer.get());
+
+                    // 3. 处理结果
+                    Thread.sleep(clientProcessDelay);
+                    ProcessMonitor.clientProcessed(order);
+
+                    serverLatch.countDown();
+
+                    return 0;
+                }
+            });
+
+            executor.submit(futureTask);
         }
+
     }
 }
 

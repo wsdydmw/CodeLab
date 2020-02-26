@@ -10,6 +10,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -17,26 +18,38 @@ import java.util.concurrent.Executors;
  * 一个Client向多个Server发送请求，均采用Select多路复用模式
  */
 public class SelectIOTest {
-    final byte serverSize = 5;
+    final byte serverSize = 3;
     final String address = "127.0.0.1";
     final int basePort = 8880;
+    final int networdDelay = 1000;
+    final int clientProcessDelay = 2000;
+    final int serverProcessDelay = 4000;
+    final CountDownLatch serverLatch = new CountDownLatch(serverSize);
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         new SelectIOTest().process();
+        System.exit(0);
     }
 
-    public void process() {
+    public void process() throws InterruptedException {
         ExecutorService executorService = Executors.newCachedThreadPool();
+        ProcessMonitor.begin();
 
         for (byte i = 1; i <= serverSize; i++) {
             executorService.execute(new SelectServerSocketThread(i));
         }
 
+        Thread.sleep(3000);// 等待server启动
         executorService.execute(new SelectSocketThread());
+
+        serverLatch.await();
+        ProcessMonitor.displayProcess();
+        executorService.shutdown();
+        return;
     }
 
     /**
-     * Server，接受请求
+     * Server，接受请求，返回自身编号
      */
     class SelectServerSocketThread implements Runnable {
         private Selector selector;
@@ -51,7 +64,7 @@ public class SelectIOTest {
             try {
                 init();
                 listen();
-            } catch (IOException e) {
+            } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
         }
@@ -66,7 +79,7 @@ public class SelectIOTest {
             serverChannel.register(selector, SelectionKey.OP_ACCEPT);
         }
 
-        public void listen() throws IOException {
+        public void listen() throws IOException, InterruptedException {
             while (true) {
                 selector.select();
                 Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
@@ -85,22 +98,24 @@ public class SelectIOTest {
 
                         ByteBuffer buffer = ByteBuffer.allocate(1);
                         if (channel.read(buffer) != -1) {
+                            // 1. 接收请求
                             buffer.flip();
                             byte param = buffer.get();
 
                             if (param != order) {
                                 System.out.println("order error");
                             }
+                            Thread.sleep(networdDelay);//模拟网络延迟
                             ProcessMonitor.serverReceived(order);
-                            try {
-                                Thread.sleep((long) Math.random() * 1000);// server process
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
 
+                            // 2. 处理请求
+                            Thread.sleep(serverProcessDelay);
+
+                            // 3. 返回编号
+                            ProcessMonitor.serverReturn(order);
+                            Thread.sleep(networdDelay);
                             buffer.clear();
                             channel.write(buffer);
-                            ProcessMonitor.serverReturn(order);
                         }
                     }
                     //需要手动移除，防止重复处理
@@ -111,7 +126,7 @@ public class SelectIOTest {
     }
 
     /**
-     * client，向多个server发送请求
+     * client，串行方式向多个server发送请求
      */
     class SelectSocketThread implements Runnable {
 
@@ -125,17 +140,13 @@ public class SelectIOTest {
                     link(i);
                 }
                 listen();
-            } catch (IOException e) {
+            } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
         }
 
-        public void init() {
-            try {
-                selector = Selector.open();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        public void init() throws IOException {
+            selector = Selector.open();
         }
 
         public void link(byte order) throws IOException {
@@ -146,7 +157,7 @@ public class SelectIOTest {
             channel.register(selector, SelectionKey.OP_CONNECT);
         }
 
-        public void listen() throws IOException {
+        public void listen() throws IOException, InterruptedException {
             while (true) {
                 selector.select();
                 Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
@@ -164,25 +175,20 @@ public class SelectIOTest {
                         channel.configureBlocking(false);
                         channel.register(selector, SelectionKey.OP_WRITE);
                     } else if (key.isWritable()) {// 可写数据事件
+                        // 1. 发送请求
                         SocketChannel channel = (SocketChannel) key.channel();
 
-                        // 发送消息
                         byte order = (byte) (Integer.valueOf(StringUtils.substringAfter(channel.getRemoteAddress().toString(), ":")) - basePort);
                         ByteBuffer buffer = ByteBuffer.allocate(1);
                         buffer.put(order);
 
+                        ProcessMonitor.clientSend(order);
                         buffer.clear();
                         channel.write(buffer);
 
-                        try {
-                            Thread.sleep((long) Math.random() * 1000);// network delay
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                        ProcessMonitor.clientSend(order);
-
                         channel.register(selector, SelectionKey.OP_READ);
                     } else if (key.isReadable()) { // 有可读数据事件。
+                        // 2. 等到结果
                         SocketChannel channel = (SocketChannel) key.channel();
 
                         ByteBuffer buffer = ByteBuffer.allocate(1);
@@ -191,6 +197,12 @@ public class SelectIOTest {
                         buffer.flip();
                         byte order = buffer.get();
                         ProcessMonitor.clientReceived(order);
+
+                        // 3. 处理结果
+                        Thread.sleep(clientProcessDelay);
+                        ProcessMonitor.clientProcessed(order);
+
+                        serverLatch.countDown();
                     }
                     keys.remove();
                 }
