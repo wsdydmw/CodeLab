@@ -10,6 +10,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -17,11 +18,13 @@ import java.util.concurrent.Executors;
  * 一个Client向多个Server发送请求，均采用Select多路复用模式
  */
 public class SelectIOTest {
-    final byte serverSize = 5;
+    final byte serverSize = 3;
     final String address = "127.0.0.1";
     final int basePort = 8880;
-    final int serverProcessDelay = 2000;
-    final int networkDelay = 1000;
+    final int clientProcessDelay = 3000;
+    final int serverProcessDelay = 4000;
+    final CountDownLatch serverLatch = new CountDownLatch(serverSize);
+    final CountDownLatch clientLatch = new CountDownLatch(1);
 
     public static void main(String[] args) throws InterruptedException {
         new SelectIOTest().process();
@@ -36,6 +39,11 @@ public class SelectIOTest {
 
         Thread.sleep(3000);// 等待server启动
         executorService.execute(new SelectSocketThread());
+
+        clientLatch.await();
+        ProcessMonitor.displayProcess();
+        executorService.shutdown();
+        return;
     }
 
     /**
@@ -88,6 +96,7 @@ public class SelectIOTest {
 
                         ByteBuffer buffer = ByteBuffer.allocate(1);
                         if (channel.read(buffer) != -1) {
+                            // 1. 接收请求
                             buffer.flip();
                             byte param = buffer.get();
 
@@ -96,11 +105,17 @@ public class SelectIOTest {
                             }
                             ProcessMonitor.serverReceived(order);
 
-                            Thread.sleep((long) Math.random() * serverProcessDelay);
+                            // 2. 处理请求
+                            Thread.sleep(serverProcessDelay);
 
+                            // 3. 返回编号
                             buffer.clear();
                             channel.write(buffer);
                             ProcessMonitor.serverReturn(order);
+
+                            // 4. 关闭Server
+                            serverLatch.countDown();
+                            return;
                         }
                     }
                     //需要手动移除，防止重复处理
@@ -143,7 +158,7 @@ public class SelectIOTest {
         }
 
         public void listen() throws IOException, InterruptedException {
-            while (true) {
+            while (serverLatch.getCount() != 0) {
                 selector.select();
                 Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
 
@@ -160,21 +175,20 @@ public class SelectIOTest {
                         channel.configureBlocking(false);
                         channel.register(selector, SelectionKey.OP_WRITE);
                     } else if (key.isWritable()) {// 可写数据事件
+                        // 1. 发送请求
                         SocketChannel channel = (SocketChannel) key.channel();
 
-                        // 发送消息
                         byte order = (byte) (Integer.valueOf(StringUtils.substringAfter(channel.getRemoteAddress().toString(), ":")) - basePort);
                         ByteBuffer buffer = ByteBuffer.allocate(1);
                         buffer.put(order);
 
                         buffer.clear();
                         channel.write(buffer);
-
-                        Thread.sleep((long) Math.random() * networkDelay);
                         ProcessMonitor.clientSend(order);
 
                         channel.register(selector, SelectionKey.OP_READ);
                     } else if (key.isReadable()) { // 有可读数据事件。
+                        // 2. 等到结果
                         SocketChannel channel = (SocketChannel) key.channel();
 
                         ByteBuffer buffer = ByteBuffer.allocate(1);
@@ -183,10 +197,16 @@ public class SelectIOTest {
                         buffer.flip();
                         byte order = buffer.get();
                         ProcessMonitor.clientReceived(order);
+
+                        // 3. 处理结果
+                        Thread.sleep(clientProcessDelay);
+                        ProcessMonitor.clientProcessed(order);
                     }
                     keys.remove();
                 }
             }
+            clientLatch.countDown();
+            return;
         }
     }
 }
