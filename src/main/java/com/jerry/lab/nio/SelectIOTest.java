@@ -20,23 +20,26 @@ public class SelectIOTest {
     final byte serverSize = 5;
     final String address = "127.0.0.1";
     final int basePort = 8880;
+    final int serverProcessDelay = 2000;
+    final int networkDelay = 1000;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         new SelectIOTest().process();
     }
 
-    public void process() {
+    public void process() throws InterruptedException {
         ExecutorService executorService = Executors.newCachedThreadPool();
 
         for (byte i = 1; i <= serverSize; i++) {
             executorService.execute(new SelectServerSocketThread(i));
         }
 
+        Thread.sleep(3000);// 等待server启动
         executorService.execute(new SelectSocketThread());
     }
 
     /**
-     * Server，接受请求
+     * Server，接受请求，返回自身编号
      */
     class SelectServerSocketThread implements Runnable {
         private Selector selector;
@@ -51,7 +54,7 @@ public class SelectIOTest {
             try {
                 init();
                 listen();
-            } catch (IOException e) {
+            } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
         }
@@ -66,7 +69,7 @@ public class SelectIOTest {
             serverChannel.register(selector, SelectionKey.OP_ACCEPT);
         }
 
-        public void listen() throws IOException {
+        public void listen() throws IOException, InterruptedException {
             while (true) {
                 selector.select();
                 Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
@@ -92,11 +95,8 @@ public class SelectIOTest {
                                 System.out.println("order error");
                             }
                             ProcessMonitor.serverReceived(order);
-                            try {
-                                Thread.sleep((long) Math.random() * 1000);// server process
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
+
+                            Thread.sleep((long) Math.random() * serverProcessDelay);
 
                             buffer.clear();
                             channel.write(buffer);
@@ -111,7 +111,7 @@ public class SelectIOTest {
     }
 
     /**
-     * client，向多个server发送请求
+     * client，串行方式向多个server发送请求
      */
     class SelectSocketThread implements Runnable {
 
@@ -125,17 +125,13 @@ public class SelectIOTest {
                     link(i);
                 }
                 listen();
-            } catch (IOException e) {
+            } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
         }
 
-        public void init() {
-            try {
-                selector = Selector.open();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        public void init() throws IOException {
+            selector = Selector.open();
         }
 
         public void link(byte order) throws IOException {
@@ -146,7 +142,7 @@ public class SelectIOTest {
             channel.register(selector, SelectionKey.OP_CONNECT);
         }
 
-        public void listen() throws IOException {
+        public void listen() throws IOException, InterruptedException {
             while (true) {
                 selector.select();
                 Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
@@ -174,11 +170,7 @@ public class SelectIOTest {
                         buffer.clear();
                         channel.write(buffer);
 
-                        try {
-                            Thread.sleep((long) Math.random() * 1000);// network delay
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+                        Thread.sleep((long) Math.random() * networkDelay);
                         ProcessMonitor.clientSend(order);
 
                         channel.register(selector, SelectionKey.OP_READ);
