@@ -9,16 +9,17 @@ import java.util.concurrent.Executors;
 
 public class BlockingIOTest {
 
-    final byte serverSize = 1;
+    final byte serverSize = 3;
     final String address = "127.0.0.1";
     final int basePort = 8880;
-    final int clientProcessDelay = 3000;
+    final int networdDelay = 1000;//考虑到测试重点在Client，为了不产生影响，网络延迟统一在server端模拟
+    final int clientProcessDelay = 2000;
     final int serverProcessDelay = 4000;
     final CountDownLatch serverLatch = new CountDownLatch(serverSize);
-    final CountDownLatch clientLatch = new CountDownLatch(1);
 
     public static void main(String[] args) throws InterruptedException {
         new BlockingIOTest().process();
+        System.exit(0);
     }
 
     public void process() throws InterruptedException {
@@ -32,9 +33,9 @@ public class BlockingIOTest {
         Thread.sleep(3000);// 等待server启动
         executorService.execute(new BlockingIOTest.BlockingSocketThread());
 
-        clientLatch.await();
+        serverLatch.await();
         ProcessMonitor.displayProcess();
-        executorService.shutdown();
+        executorService.shutdownNow();
         return;
     }
 
@@ -76,19 +77,17 @@ public class BlockingIOTest {
                 if (param != order) {
                     System.out.println("order error " + param + "!=" + order);
                 }
+                Thread.sleep(networdDelay);//模拟网络延迟
                 ProcessMonitor.serverReceived(order);//阻塞
 
                 // 2. 处理请求
                 Thread.sleep(serverProcessDelay);
 
                 // 3. 返回编号
+                ProcessMonitor.serverReturn(order);
+                Thread.sleep(networdDelay);
                 pw.println(order);
                 pw.flush();
-                ProcessMonitor.serverReturn(order);
-
-                // 4. 关闭Server
-                serverLatch.countDown();
-                return;
             }
         }
     }
@@ -105,10 +104,6 @@ public class BlockingIOTest {
                 for (byte i = 1; i <= serverSize; i++) {
                     link(i);
                 }
-
-                serverLatch.await();
-                clientLatch.countDown();
-                return;
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
@@ -120,16 +115,18 @@ public class BlockingIOTest {
             BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
             // 1. 发送请求
+            ProcessMonitor.clientSend(order);
             pw.println(order);
             pw.flush();
-            ProcessMonitor.clientSend(order);
 
-            // 2. 等到结果
+            // 2. 等待结果
             ProcessMonitor.clientReceived(Byte.parseByte(br.readLine()));//阻塞
 
             // 3. 处理结果
             Thread.sleep(clientProcessDelay);
             ProcessMonitor.clientProcessed(order);
+
+            serverLatch.countDown();
         }
 
     }

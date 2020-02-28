@@ -21,17 +21,19 @@ public class SelectIOTest {
     final byte serverSize = 3;
     final String address = "127.0.0.1";
     final int basePort = 8880;
-    final int clientProcessDelay = 3000;
+    final int networdDelay = 1000;
+    final int clientProcessDelay = 2000;
     final int serverProcessDelay = 4000;
     final CountDownLatch serverLatch = new CountDownLatch(serverSize);
-    final CountDownLatch clientLatch = new CountDownLatch(1);
 
     public static void main(String[] args) throws InterruptedException {
         new SelectIOTest().process();
+        System.exit(0);
     }
 
     public void process() throws InterruptedException {
         ExecutorService executorService = Executors.newCachedThreadPool();
+        ProcessMonitor.begin();
 
         for (byte i = 1; i <= serverSize; i++) {
             executorService.execute(new SelectServerSocketThread(i));
@@ -40,7 +42,7 @@ public class SelectIOTest {
         Thread.sleep(3000);// 等待server启动
         executorService.execute(new SelectSocketThread());
 
-        clientLatch.await();
+        serverLatch.await();
         ProcessMonitor.displayProcess();
         executorService.shutdown();
         return;
@@ -103,19 +105,17 @@ public class SelectIOTest {
                             if (param != order) {
                                 System.out.println("order error");
                             }
+                            Thread.sleep(networdDelay);//模拟网络延迟
                             ProcessMonitor.serverReceived(order);
 
                             // 2. 处理请求
                             Thread.sleep(serverProcessDelay);
 
                             // 3. 返回编号
+                            ProcessMonitor.serverReturn(order);
+                            Thread.sleep(networdDelay);
                             buffer.clear();
                             channel.write(buffer);
-                            ProcessMonitor.serverReturn(order);
-
-                            // 4. 关闭Server
-                            serverLatch.countDown();
-                            return;
                         }
                     }
                     //需要手动移除，防止重复处理
@@ -158,7 +158,7 @@ public class SelectIOTest {
         }
 
         public void listen() throws IOException, InterruptedException {
-            while (serverLatch.getCount() != 0) {
+            while (true) {
                 selector.select();
                 Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
 
@@ -182,9 +182,9 @@ public class SelectIOTest {
                         ByteBuffer buffer = ByteBuffer.allocate(1);
                         buffer.put(order);
 
+                        ProcessMonitor.clientSend(order);
                         buffer.clear();
                         channel.write(buffer);
-                        ProcessMonitor.clientSend(order);
 
                         channel.register(selector, SelectionKey.OP_READ);
                     } else if (key.isReadable()) { // 有可读数据事件。
@@ -201,12 +201,12 @@ public class SelectIOTest {
                         // 3. 处理结果
                         Thread.sleep(clientProcessDelay);
                         ProcessMonitor.clientProcessed(order);
+
+                        serverLatch.countDown();
                     }
                     keys.remove();
                 }
             }
-            clientLatch.countDown();
-            return;
         }
     }
 }
