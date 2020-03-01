@@ -1,4 +1,4 @@
-package com.jerry.lab.proxy.jdk;
+package com.jerry.lab.designpatterns.proxy.jdk;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;

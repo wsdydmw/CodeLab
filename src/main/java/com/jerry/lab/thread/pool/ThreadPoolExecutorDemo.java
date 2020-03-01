@@ -1,7 +1,9 @@
-package com.jerry.lab.threadpool;
+package com.jerry.lab.thread.pool;
 
 import java.time.LocalDateTime;
-import java.util.concurrent.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class ThreadPoolExecutorDemo {
 
@@ -11,7 +13,7 @@ public class ThreadPoolExecutorDemo {
         CountDownLatch finishCountDown = new CountDownLatch(taskNum);
 
         for (int taskNo = 0; taskNo < taskNum; taskNo++) {
-            executorService.scheduleAtFixedRate(new workThread(taskNo), 0, 3 , TimeUnit.SECONDS );
+            executorService.scheduleAtFixedRate(new workThread(taskNo), 0, 3, TimeUnit.SECONDS);
             //finishCountDown.countDown();
         }
 

@@ -152,8 +152,6 @@ public class AsynchronousIOTest {
             FutureTask<Integer> futureTask = new FutureTask<>(new Callable<Integer>() {
                 @Override
                 public Integer call() throws Exception {
-
-
                     // 1. 发送请求
                     ByteBuffer buffer = ByteBuffer.allocate(1);
                     buffer.put(order);
@@ -161,7 +159,6 @@ public class AsynchronousIOTest {
                     buffer.clear();
                     socketChannel.write(buffer);
                     ProcessMonitor.clientSend(order);
-
 
                     // 2. 等待结果
                     buffer.clear();

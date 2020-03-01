@@ -39,6 +39,6 @@ class Item implements Delayed {
 
     @Override
     public int compareTo(Delayed o) {
-        return (this.time - ((Item)o).time) <=0 ? -1 : 1;
+        return (this.time - ((Item) o).time) <= 0 ? -1 : 1;
     }
 }

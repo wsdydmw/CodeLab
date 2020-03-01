@@ -1,4 +1,4 @@
-package com.jerry.lab.reference;
+package com.jerry.lab.jvm.reference;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;

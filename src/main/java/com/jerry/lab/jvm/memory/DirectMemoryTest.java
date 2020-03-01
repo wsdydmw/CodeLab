@@ -1,4 +1,4 @@
-package com.jerry.lab.memory;
+package com.jerry.lab.jvm.memory;
 
 import sun.nio.ch.DirectBuffer;
 

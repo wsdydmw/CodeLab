@@ -1,4 +1,4 @@
-package com.jerry.lab.reference;
+package com.jerry.lab.jvm.reference;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
@@ -109,6 +109,7 @@ public class SoftReferenceCache<K, V> {
 
     /**
      * 数据项，封装了软引用，便于获取对应缓存池中的key
+     *
      * @param <V>
      */
     private class InnerSoftReference<V> extends SoftReference<V> {
