@@ -1,6 +1,9 @@
-package com.jerry.lab.thread;
+package com.jerry.lab.concurrent.juc;
 
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * 基于jdk1.8实现任务异步处理
@@ -11,7 +14,7 @@ public class CompletableFutureTest {
         ExecutorService executor = Executors.newFixedThreadPool(2);
 
         // CompletableFuture
-        CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+        CompletableFuture.runAsync(() -> {
             System.out.println("[" + Thread.currentThread().getId() + "]Task started!");
             try {
                 //模拟耗时操作
@@ -21,10 +24,9 @@ public class CompletableFutureTest {
             }
             System.out.println("[" + Thread.currentThread().getId() + "]Task end!");
             return;
-        }, executor);
-
-        //采用lambada的实现方式
-        future.thenRun(() -> System.out.println("[" + Thread.currentThread().getId() + "]Task got result"));
+        }, executor)
+                .thenRun(() -> System.out.println("[" + Thread.currentThread().getId() + "]Task got result"))
+                .thenRun(() -> System.out.println("[" + Thread.currentThread().getId() + "]Task got result2"));
 
         System.out.println("[" + Thread.currentThread().getId() + "]Main thread is running ");
     }

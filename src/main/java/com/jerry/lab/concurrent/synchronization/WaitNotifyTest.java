@@ -1,4 +1,4 @@
-package com.jerry.lab.thread;
+package com.jerry.lab.concurrent.synchronization;
 
 import java.time.Instant;
 import java.util.LinkedList;

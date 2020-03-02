@@ -1,4 +1,4 @@
-package com.jerry.lab.thread;
+package com.jerry.lab.concurrent.thread;
 
 public class ThreadLocalTest {
     //创建一个Integer型的线程本地变量

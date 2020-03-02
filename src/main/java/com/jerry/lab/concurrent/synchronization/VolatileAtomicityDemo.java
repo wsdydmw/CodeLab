@@ -1,4 +1,4 @@
-package com.jerry.lab.thread;
+package com.jerry.lab.concurrent.synchronization;
 
 import java.util.concurrent.CountDownLatch;
 

@@ -1,11 +1,11 @@
-package com.jerry.lab.thread;
+package com.jerry.lab.concurrent.synchronization;
 
-public class VolatileVisibilityDemo {
+public class SynchronizedVisibilityDemo {
     // 共享变量
-    private volatile boolean ready = false;
+    private boolean ready = false;
 
     public static void main(String[] args) {
-        VolatileVisibilityDemo demo = new VolatileVisibilityDemo();
+        SynchronizedVisibilityDemo demo = new SynchronizedVisibilityDemo();
         demo.new ReadThread().start();
         demo.new WriteThread().start();
     }
@@ -16,8 +16,10 @@ public class VolatileVisibilityDemo {
         public void run() {
             System.out.println("[Read Thread]Begin to wait ready signal");
             while (true) {
-                if (ready) {
-                    break;
+                synchronized (this) {
+                    if (ready) {
+                        break;
+                    }
                 }
             }
             System.out.println("[Read Thread]Can read now");
@@ -34,7 +36,9 @@ public class VolatileVisibilityDemo {
             } catch (InterruptedException ignored) {
             }
 
-            ready = true;
+            synchronized (this) {
+                ready = true;
+            }
             System.out.println("[Write Thread]Ready signal changed");
         }
     }

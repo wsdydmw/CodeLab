@@ -1,4 +1,4 @@
-package com.jerry.lab.thread.pool;
+package com.jerry.lab.concurrent.threadpool;
 
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
