@@ -1,4 +1,4 @@
-package com.jerry.lab.other;
+package com.jerry.lab.designpatterns.singleton;
 
 import java.util.HashSet;
 import java.util.concurrent.CountDownLatch;

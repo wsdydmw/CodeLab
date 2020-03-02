@@ -1,4 +1,4 @@
-package com.jerry.lab.threadpool;
+package com.jerry.lab.thread.pool;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;

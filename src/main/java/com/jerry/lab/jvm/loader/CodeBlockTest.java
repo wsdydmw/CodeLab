@@ -1,4 +1,4 @@
-package com.jerry.lab.jvm;
+package com.jerry.lab.jvm.loader;
 
 public class CodeBlockTest {
     public static void main(String[] args) {

@@ -1,4 +1,4 @@
-package com.jerry.lab.other;
+package com.jerry.lab.oo;
 
 public class ExtendDemo {
     public static void main(String[] args) {

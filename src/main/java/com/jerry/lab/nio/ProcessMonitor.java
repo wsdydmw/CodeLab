@@ -7,6 +7,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * step数字意义
+ * 1:CLIENT_SEND
+ * 2:SERVER_RECEIVED
+ * 3:SERVER_RETURN
+ * 4:CLIENT_RECEIVED
+ * 5:CLIENT_PROCESSED
+ * <p>
+ * 1 -- networdDelay --> 2 -- serverProcessDelay --> 3 -- networdDelay --> 4 -- clientProcessDelay --> 5
+ */
 public class ProcessMonitor {
 
     private static long begin;//seconds

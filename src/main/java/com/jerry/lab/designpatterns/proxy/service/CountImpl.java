@@ -1,4 +1,4 @@
-package com.jerry.lab.proxy.service;
+package com.jerry.lab.designpatterns.proxy.service;
 
 /**
  * 真实实现类(包含业务逻辑)

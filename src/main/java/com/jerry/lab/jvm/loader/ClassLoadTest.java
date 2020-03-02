@@ -1,4 +1,4 @@
-package com.jerry.lab.jvm;
+package com.jerry.lab.jvm.loader;
 
 import java.io.FileInputStream;
 import java.lang.reflect.Method;

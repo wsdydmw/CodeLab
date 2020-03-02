@@ -1,4 +1,4 @@
-package com.jerry.lab.proxy.cglib;
+package com.jerry.lab.designpatterns.proxy.cglib;
 
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;

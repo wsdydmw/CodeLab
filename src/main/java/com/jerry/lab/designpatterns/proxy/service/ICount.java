@@ -1,4 +1,4 @@
-package com.jerry.lab.proxy.service;
+package com.jerry.lab.designpatterns.proxy.service;
 
 /**
  * 定义一个账户接口

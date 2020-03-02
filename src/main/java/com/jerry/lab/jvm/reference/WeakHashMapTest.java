@@ -1,4 +1,4 @@
-package com.jerry.lab.reference;
+package com.jerry.lab.jvm.reference;
 
 import java.util.Map;
 import java.util.WeakHashMap;
