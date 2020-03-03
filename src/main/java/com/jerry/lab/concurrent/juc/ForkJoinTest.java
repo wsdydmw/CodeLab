@@ -26,23 +26,10 @@ public class ForkJoinTest {
 
         protected Integer compute() {
             int subCount;
-            if (last - first < 10) {
+            if (last - first < 100) {
                 subCount = 0;
                 for (int i = first; i <= last; i++) {
                     if (numbers[i] < 0.5) subCount++;
-
-                    // 模拟任务量不均衡
-                    try {
-                        Thread.sleep((long) i);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    for (int j = 0; j < numbers.length - i; j++) {
-                        for (int k = 0; k < 100; k++) {
-                            dummy = j * k + i; // dummy is volatile, so multiple writes occur
-                            numbers[i] = dummy;
-                        }
-                    }
                 }
             } else {
                 int mid = (first + last) >>> 1;

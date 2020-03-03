@@ -5,7 +5,7 @@ import java.util.stream.DoubleStream;
 
 public class ForkJoinVSThreadPoolComparer {
 
-    private static int NUMBER_SIZE = 10000;
+    private static int NUMBER_SIZE = 500000;
     private static int THREAD_SIZE = 4;
     private static double[] NUMBERS;
 

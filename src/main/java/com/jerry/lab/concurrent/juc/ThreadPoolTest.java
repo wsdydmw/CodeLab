@@ -40,20 +40,6 @@ public class ThreadPoolTest {
                 if (numbers[i] < 0.5) {
                     subCount++;
                 }
-
-                // 模拟任务量不均衡
-                try {
-                    Thread.sleep((long) i);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                for (int j = 0; j < numbers.length - i; j++) {
-                    for (int k = 0; k < 10; k++) {
-                        dummy = j * k + i; // dummy is volatile, so multiple writes occur
-                        numbers[i] = dummy;
-                    }
-                }
-
             }
             return subCount;
         }
