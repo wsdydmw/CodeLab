@@ -38,7 +38,7 @@ public class ForkJoinPoolTest {
         public Integer call() {
             int subCount = 0;
             for (int i = first; i <= last; i++) {
-                if (numbers[i] < 0.5) {
+                if (Math.pow(numbers[i], 2) < 0.5) {
                     subCount++;
                 }
             }

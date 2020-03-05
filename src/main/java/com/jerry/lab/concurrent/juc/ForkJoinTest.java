@@ -32,7 +32,7 @@ public class ForkJoinTest {
             if (last - first < count_per_task) {
                 subCount = 0;
                 for (int i = first; i <= last; i++) {
-                    if (numbers[i] < 0.5) subCount++;
+                    if (Math.pow(numbers[i], 2) < 0.5) subCount++;
                 }
             } else {
                 int mid = (first + last) >>> 1;
