@@ -5,7 +5,7 @@ import com.jerry.lab.common.Utils;
 import java.util.concurrent.*;
 
 public class BlockingQueueComparer {
-    static int N = 5000000;//测试数据量
+    static int N = 5000;//测试数据量
 
     public static void main(String[] args) throws Exception {
         System.out.println("length\tLinked\tArray\tSynchronous-noFair\tSynchronous-Fair\tLinkedTransfer\tLinked-C\tArray-C\tSynchronous-noFair-C\tSynchronous-Fair-C\tLinkedTransfer-C");
@@ -39,29 +39,24 @@ public class BlockingQueueComparer {
 
         for (int i = 0; i < concurrentDegree; i++) {
             // put() threads
-            executorService.submit(new Runnable() {
-                public void run() {
-                    int lastPut = 0;
-                    while ((lastPut = (int) lastPutCount.getCount()) > 0) {
-                        try {
-                            q.put(lastPut);
-                            lastPutCount.countDown();
-                        } catch (InterruptedException ex) {
-                        }
+            executorService.execute(() -> {
+                int lastPut = 0;
+                while ((lastPut = (int) lastPutCount.getCount()) > 0) {
+                    try {
+                        q.put(lastPut);
+                        lastPutCount.countDown();
+                    } catch (InterruptedException ex) {
                     }
                 }
             });
 
             // take() threads
-            executorService.submit(new Runnable() {
-                public void run() {
-                    while (lastTakeCount.getCount() > 0) {
-                        try {
-                            q.take();
-                            lastTakeCount.countDown();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+            executorService.execute(() -> {
+                while (lastTakeCount.getCount() > 0) {
+                    try {
+                        q.take();
+                        lastTakeCount.countDown();
+                    } catch (InterruptedException e) {
                     }
                 }
             });
@@ -73,7 +68,7 @@ public class BlockingQueueComparer {
         long cost = System.nanoTime() - begin;
         long result = (long) (1000000000.0 * N / cost);// items/second
 
-        executorService.shutdown();
+        executorService.shutdownNow();
 
         return result;
     }
