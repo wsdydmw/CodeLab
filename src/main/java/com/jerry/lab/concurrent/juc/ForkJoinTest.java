@@ -1,5 +1,7 @@
 package com.jerry.lab.concurrent.juc;
 
+import com.jerry.lab.common.Utils;
+
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveTask;
 
@@ -7,16 +9,25 @@ public class ForkJoinTest {
     private double[] numbers;
     private int task_size;
 
-    public long process(double[] numbers, int thread_size, int task_size) {
+    public long process(double[] numbers, int thread_size, int task_size, double total) {
         this.numbers = numbers;
         this.task_size = task_size;
 
         long begin = System.currentTimeMillis();
-        new ForkJoinPool(thread_size).invoke(new ForkJoinTask(0, numbers.length - 1));
-        return System.currentTimeMillis() - begin;
+        ForkJoinPool forkJoinPool = new ForkJoinPool(thread_size);
+        double result = forkJoinPool.invoke(new ForkJoinTask(0, numbers.length - 1));
+
+        if (!Utils.isEqual(total, result)) {
+            System.err.println("got error " + result + "|" + total);
+        }
+        long end = System.currentTimeMillis();
+
+        forkJoinPool.shutdownNow();
+
+        return end - begin;
     }
 
-    private class ForkJoinTask extends RecursiveTask<Integer> {
+    private class ForkJoinTask extends RecursiveTask<Double> {
         private int first;
         private int last;
         private int count_per_task;
@@ -27,12 +38,12 @@ public class ForkJoinTest {
             count_per_task = numbers.length / task_size;
         }
 
-        protected Integer compute() {
-            int subCount;
+        protected Double compute() {
+            double subCount = 0;
             if (last - first < count_per_task) {
-                subCount = 0;
                 for (int i = first; i <= last; i++) {
-                    if (Math.pow(numbers[i], 2) < 0.5) subCount++;
+                    Utils.calNumber(numbers[i]);
+                    subCount += numbers[i];
                 }
             } else {
                 int mid = (first + last) >>> 1;

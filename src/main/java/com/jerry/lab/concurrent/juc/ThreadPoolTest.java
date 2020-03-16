@@ -1,11 +1,14 @@
 package com.jerry.lab.concurrent.juc;
 
+import com.jerry.lab.common.Utils;
+
 import java.util.concurrent.*;
 
 public class ThreadPoolTest {
     private double[] numbers;
 
-    public long process(double[] numbers, int thread_size, int task_size) throws ExecutionException, InterruptedException {
+    public long process(double[] numbers, int thread_size, int task_size, double total) throws ExecutionException, InterruptedException {
+        double result = 0;
         this.numbers = numbers;
 
         long begin = System.currentTimeMillis();
@@ -18,15 +21,22 @@ public class ThreadPoolTest {
         }
 
         // wait all task complete
-        for (int i = 0; i < thread_size; i++) {
-            Integer.parseInt(futureList[i].get().toString());
+        for (int i = 0; i < task_size; i++) {
+            result += Double.parseDouble(futureList[i].get().toString());
         }
 
-        return System.currentTimeMillis() - begin;
+        if (!Utils.isEqual(total, result)) {
+            System.err.println("got error " + result + "|" + total);
+        }
+        long end = System.currentTimeMillis();
+
+        executorService.shutdownNow();
+
+        return end - begin;
     }
 
 
-    private class ThreadPoolExecutorTask implements Callable<Integer> {
+    private class ThreadPoolExecutorTask implements Callable<Double> {
         private int first;
         private int last;
 
@@ -35,12 +45,11 @@ public class ThreadPoolTest {
             this.last = last;
         }
 
-        public Integer call() {
-            int subCount = 0;
+        public Double call() {
+            double subCount = 0;
             for (int i = first; i <= last; i++) {
-                if (Math.pow(numbers[i], 2) < 0.5) {
-                    subCount++;
-                }
+                Utils.calNumber(numbers[i]);
+                subCount += numbers[i];
             }
             return subCount;
         }
