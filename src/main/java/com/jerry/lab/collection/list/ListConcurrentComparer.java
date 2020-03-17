@@ -13,9 +13,8 @@ import java.util.concurrent.Executors;
 /**
  * write percent	arrayList	synchronizedList	copyOnWriteArrayList
  * 0%	2556	2325	2401
- * 2%	2387(not thread safe, expect 1000100000 but 97960	2364	7161
- * 4%	2381(not thread safe, expect 1000200000 but 196491	2418	178891
- * 6%	2377(not thread safe, expect 1000300000 but 296761	2300	82131
+ * 2%	2387(not thread safe, expect 1000100000 but 97960)	2364	7161
+ * 4%	2381(not thread safe, expect 1000200000 but 196491)	2418	178891
  */
 public class ListConcurrentComparer {
     static int DATA_INIT_SIZE = 1000;
@@ -87,7 +86,7 @@ public class ListConcurrentComparer {
 
         // 2. check result
         if (DATA_INIT_SIZE + writeCount != list.size()) {
-            result.append("(not thread safe, expect " + DATA_INIT_SIZE + writeCount + " but " + list.size());
+            result.append("(not thread safe, expect " + DATA_INIT_SIZE + writeCount + " but " + list.size() + ")");
         }
         return result.toString();
     }
