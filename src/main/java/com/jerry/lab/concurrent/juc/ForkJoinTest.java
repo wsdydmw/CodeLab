@@ -6,19 +6,19 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveTask;
 
 public class ForkJoinTest {
-    private double[] numbers;
+    private long[] numbers;
     private int task_size;
 
-    public long process(double[] numbers, int thread_size, int task_size, double total) {
+    public long process(long[] numbers, int thread_size, int task_size, long total) {
         this.numbers = numbers;
         this.task_size = task_size;
 
         long begin = System.currentTimeMillis();
         ForkJoinPool forkJoinPool = new ForkJoinPool(thread_size);
-        double result = forkJoinPool.invoke(new ForkJoinTask(0, numbers.length - 1));
+        long result = forkJoinPool.invoke(new ForkJoinTask(0, numbers.length - 1));
 
-        if (!Utils.isEqual(total, result)) {
-            System.err.println("got error " + result + "|" + total);
+        if (total != result) {
+            System.err.print("got error " + result + "|" + total);
         }
         long end = System.currentTimeMillis();
 
@@ -27,7 +27,7 @@ public class ForkJoinTest {
         return end - begin;
     }
 
-    private class ForkJoinTask extends RecursiveTask<Double> {
+    private class ForkJoinTask extends RecursiveTask<Long> {
         private int first;
         private int last;
         private int count_per_task;
@@ -38,12 +38,12 @@ public class ForkJoinTest {
             count_per_task = numbers.length / task_size;
         }
 
-        protected Double compute() {
-            double subCount = 0;
+        protected Long compute() {
+            long sumCount = 0;
             if (last - first < count_per_task) {
                 for (int i = first; i <= last; i++) {
                     Utils.calNumber(numbers[i]);
-                    subCount += numbers[i];
+                    sumCount += numbers[i];
                 }
             } else {
                 int mid = (first + last) >>> 1;
@@ -54,10 +54,10 @@ public class ForkJoinTest {
                 ForkJoinTask right = new ForkJoinTask(mid + 1, last);
                 right.fork();
 
-                subCount = left.join();
-                subCount += right.join();
+                sumCount = left.join();
+                sumCount += right.join();
             }
-            return subCount;
+            return sumCount;
         }
     }
 }

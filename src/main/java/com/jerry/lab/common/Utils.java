@@ -13,12 +13,16 @@ public class Utils {
         return numberFormat.format(number);
     }
 
-    public static void calNumber(double number) {
-        for (int i = 0 ; i < 1000; i++) {
+    public static void calNumber(long number) {
+        for(int i = 2; i <=Math.sqrt(number); i++){
+            if (number % i == 0)
+                return;
+        }
+        /*for (int i = 0 ; i < 1000; i++) {
             if (Math.pow(number, 10) > 0.8)  {
                 return;
             }
-        }
+        }*/
     }
 
     public static boolean isEqual (double d1, double d2) {

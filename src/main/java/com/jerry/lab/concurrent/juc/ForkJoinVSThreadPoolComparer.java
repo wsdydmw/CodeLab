@@ -1,17 +1,19 @@
 package com.jerry.lab.concurrent.juc;
 
 import java.util.concurrent.ExecutionException;
-import java.util.stream.DoubleStream;
+import java.util.stream.LongStream;
 
 public class ForkJoinVSThreadPoolComparer {
 
-    private static int NUMBER_SIZE = 50000000;
+    private static int NUMBER_SIZE = 2000000;
     private static int THREAD_SIZE = 32;
-    private static double[] NUMBERS;
+    private static long[] NUMBERS;
 
     public static void main(String[] args) throws ExecutionException, InterruptedException {
-        NUMBERS = DoubleStream.generate(Math::random).limit(NUMBER_SIZE).toArray();
-        double total = DoubleStream.of(NUMBERS).sum();// use to check result's validity
+        NUMBERS = LongStream.generate(() -> {
+            return (long) (Math.random() * Integer.MAX_VALUE);
+        }).limit(NUMBER_SIZE).toArray();
+        long total = LongStream.of(NUMBERS).sum();// use to check result's validity
 
         System.out.println("taskSize\tForkJoin\tThreadPool\tForkJoinPool");
         for (int i = 1; i <= 6; i++) {

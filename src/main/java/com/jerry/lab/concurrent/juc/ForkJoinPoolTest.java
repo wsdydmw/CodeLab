@@ -5,10 +5,10 @@ import com.jerry.lab.common.Utils;
 import java.util.concurrent.*;
 
 public class ForkJoinPoolTest {
-    private double[] numbers;
+    private long[] numbers;
 
-    public long process(double[] numbers, int thread_size, int task_size, double total) throws ExecutionException, InterruptedException {
-        double result = 0;
+    public long process(long[] numbers, int thread_size, int task_size, long total) throws ExecutionException, InterruptedException {
+        long result = 0;
         this.numbers = numbers;
 
         long begin = System.currentTimeMillis();
@@ -22,7 +22,11 @@ public class ForkJoinPoolTest {
 
         // wait all task complete
         for (int i = 0; i < task_size; i++) {
-            result += Double.parseDouble(futureList[i].get().toString());
+            result += Long.parseLong(futureList[i].get().toString());
+        }
+
+        if (total != result) {
+            System.err.print("got error " + result + "|" + total);
         }
         long end = System.currentTimeMillis();
 
@@ -32,7 +36,7 @@ public class ForkJoinPoolTest {
     }
 
 
-    private class ThreadPoolExecutorTask implements Callable<Double> {
+    private class ThreadPoolExecutorTask implements Callable<Long> {
         private int first;
         private int last;
 
@@ -41,13 +45,13 @@ public class ForkJoinPoolTest {
             this.last = last;
         }
 
-        public Double call() {
-            double subCount = 0;
+        public Long call() {
+            long sumCount = 0;
             for (int i = first; i <= last; i++) {
                 Utils.calNumber(numbers[i]);
-                subCount += numbers[i];
+                sumCount += numbers[i];
             }
-            return subCount;
+            return sumCount;
         }
     }
 }
