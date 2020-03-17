@@ -9,22 +9,24 @@ public class ForkJoinTest {
     private long[] numbers;
     private int task_size;
 
-    public long process(long[] numbers, int thread_size, int task_size, long total) {
+    public String process(long[] numbers, int thread_size, int task_size, long total) {
+        StringBuffer result = new StringBuffer();
         this.numbers = numbers;
         this.task_size = task_size;
 
         long begin = System.currentTimeMillis();
         ForkJoinPool forkJoinPool = new ForkJoinPool(thread_size);
-        long result = forkJoinPool.invoke(new ForkJoinTask(0, numbers.length - 1));
-
-        if (total != result) {
-            System.err.print("got error " + result + "|" + total);
-        }
+        long _total = forkJoinPool.invoke(new ForkJoinTask(0, numbers.length - 1));
         long end = System.currentTimeMillis();
+
+        result.append((end - begin));
+        if (total != _total) {
+            result.append("(got error " + _total + "|" + total);
+        }
 
         forkJoinPool.shutdownNow();
 
-        return end - begin;
+        return result.toString();
     }
 
     private class ForkJoinTask extends RecursiveTask<Long> {

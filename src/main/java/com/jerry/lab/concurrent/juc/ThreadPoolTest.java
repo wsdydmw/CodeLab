@@ -7,8 +7,9 @@ import java.util.concurrent.*;
 public class ThreadPoolTest {
     private long[] numbers;
 
-    public long process(long[] numbers, int thread_size, int task_size, long total) throws ExecutionException, InterruptedException {
-        long result = 0;
+    public String process(long[] numbers, int thread_size, int task_size, long total) throws ExecutionException, InterruptedException {
+        StringBuffer result = new StringBuffer();
+        long _total = 0;
         this.numbers = numbers;
 
         long begin = System.currentTimeMillis();
@@ -17,22 +18,27 @@ public class ThreadPoolTest {
         int count_per_task = numbers.length / task_size;
         Future[] futureList = new Future[task_size];
         for (int i = 0; i <= task_size - 1; i++) {
-            futureList[i] = executorService.submit(new ThreadPoolExecutorTask(i * count_per_task, (i + 1) * count_per_task - 1));
+            if (i == task_size - 1) {
+                futureList[i] = executorService.submit(new ThreadPoolExecutorTask(i * count_per_task, numbers.length - 1));
+            } else {
+                futureList[i] = executorService.submit(new ThreadPoolExecutorTask(i * count_per_task, (i + 1) * count_per_task - 1));
+            }
         }
 
         // wait all task complete
         for (int i = 0; i < task_size; i++) {
-            result += Long.parseLong(futureList[i].get().toString());
-        }
-
-        if (total != result) {
-            System.err.print("got error " + result + "|" + total);
+            _total += Long.parseLong(futureList[i].get().toString());
         }
         long end = System.currentTimeMillis();
 
+        result.append((end - begin));
+        if (total != _total) {
+            result.append("(got error " + _total + "|" + total);
+        }
+
         executorService.shutdownNow();
 
-        return end - begin;
+        return result.toString();
     }
 
 
