@@ -1,5 +1,7 @@
 package com.jerry.lab.collection.list;
 
+import com.jerry.lab.common.Utils;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -7,87 +9,91 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
 
 /**
- * 1. 为什么初次执行的函数会比较耗时
- * 2. synchronizedList居然和ArrayList差不多
+ * write percent	arrayList	synchronizedList	copyOnWriteArrayList
+ * 0%	2556	2325	2401
+ * 2%	2387(not thread safe, expect 1000100000 but 97960	2364	7161
+ * 4%	2381(not thread safe, expect 1000200000 but 196491	2418	178891
+ * 6%	2377(not thread safe, expect 1000300000 but 296761	2300	82131
  */
 public class ListConcurrentComparer {
-    static int DATA_SIZE = 100000;
-    static int OPERATE_NUM = 20000;
-    static int CONCURRENT_DEGREE = 1;
+    static int DATA_INIT_SIZE = 1000;
+    static int OPERATE_NUM = 5000000;
 
     public static void main(String[] args) throws InterruptedException {
-        //System.out.println("writePercent\tCopyOnWriteArrayList\tsynchronizedArrayList\tArrayList");
-
-        Thread.sleep(5000);
+        System.out.println("write percent\tarrayList\tsynchronizedList\tcopyOnWriteArrayList");
         for (int i = 0; i <= 3; i++) {
-            int writePercent = 1 + 2 * i;
-            System.out.print(writePercent + "%\n");
-            System.out.print(doTest(Collections.synchronizedList(new ArrayList<>()), writePercent) + "\t");
-            System.out.print(doTest(new CopyOnWriteArrayList(), writePercent) + "\t");
-        System.out.print(doTest(new ArrayList<>(), writePercent) + "\t");
+            // 1. data init
+            List<Long> arrayList = new ArrayList();
+            List<Long> synchronizedList = Collections.synchronizedList(new ArrayList<>());
+            List<Long> copyOnWriteArrayList = new CopyOnWriteArrayList();
+
+            for (int index = 0; index < DATA_INIT_SIZE; index++) {
+                arrayList.add((long) index);
+                synchronizedList.add((long) index);
+                copyOnWriteArrayList.add((long) index);
+            }
+
+            // 2. do test
+            int writePercent = 0 + 2 * i;
+            System.out.print(writePercent + "%\t");
+            System.out.print(doTest(arrayList, writePercent) + "\t");
+            System.out.print(doTest(synchronizedList, writePercent) + "\t");
+            System.out.print(doTest(copyOnWriteArrayList, writePercent));
             System.out.println();
         }
+
+        System.exit(0);
     }
 
-    public static long doTest(List<Integer> list, int writePercent) throws InterruptedException {
-        // 1. data init
-        for (int i = 0; i < DATA_SIZE; i++) {
-            list.add(getRandomValue());
-        }
+    public static String doTest(List<Long> list, int writePercent) throws InterruptedException {
+        System.gc();
+        Thread.sleep(5000);
 
-        // 2. simulate concurrent
-        //ExecutorService executorService = Executors.newFixedThreadPool(CONCURRENT_DEGREE * 2);
-        CountDownLatch writeCount = new CountDownLatch(OPERATE_NUM * writePercent / 100);
-        CountDownLatch readCount = new CountDownLatch(OPERATE_NUM * (100 - writePercent) / 100);
-        //System.out.println("read/write => " + readCount.getCount() + "/" + writeCount.getCount());
+        StringBuffer result = new StringBuffer();
+        // 1. simulate concurrent
+        ExecutorService executorService = Executors.newCachedThreadPool();
+        int readCount = OPERATE_NUM * (100 - writePercent) / 100;
+        int writeCount = OPERATE_NUM * writePercent / 100;
+        CountDownLatch readCountLatch = new CountDownLatch(readCount);
+        CountDownLatch writeCountLatch = new CountDownLatch(writeCount);
 
         long begin = System.currentTimeMillis();
-        for (int threadIndex = 0; threadIndex < CONCURRENT_DEGREE; threadIndex++) {
-            // read thread
-            new Thread(() -> {
-                //System.out.println("read thread" + Thread.currentThread().getId());
-                while (readCount.getCount() > 0) {
-                    int value = Integer.parseInt(list.get(getRandomIndex()).toString());
-                    for (int i = 0 ; i< Integer.MAX_VALUE ; i ++) {//耗时操作
-                        if(value <= i) {
-                            readCount.countDown();
-                            //System.out.println("read" + readCount.getCount());
-                            break;
-                        }
-                    }
-                }
-            }).start();
+        // read thread
+        new Thread(() -> {
+            for (int i = 0; i < readCount; i++) {
+                executorService.submit(() -> {
+                    long value = Long.parseLong(list.get(getRandomIndex()).toString());
+                    Utils.calNumber(value);
+                    readCountLatch.countDown();
+                });
+            }
+        }).start();
 
-            // write thread
-            new Thread(() -> {
-                //System.out.println("write thread" + Thread.currentThread().getId());
-                while (writeCount.getCount() > 0) {
-                    int index = getRandomIndex();
-                    list.set(index, getRandomValue());
-                    writeCount.countDown();
-                    //System.out.println("write"+ writeCount.getCount());
-                }
-            }).start();
+        // write thread
+        new Thread(() -> {
+            for (int i = 0; i < writeCount; i++) {
+                executorService.submit(() -> {
+                    list.add(0L);
+                    writeCountLatch.countDown();
+                });
+            }
+        }).start();
+
+        readCountLatch.await();
+        writeCountLatch.await();
+        result.append(System.currentTimeMillis() - begin);
+
+        // 2. check result
+        if (DATA_INIT_SIZE + writeCount != list.size()) {
+            result.append("(not thread safe, expect " + DATA_INIT_SIZE + writeCount + " but " + list.size());
         }
-
-        readCount.await();
-        writeCount.await();
-        //System.out.println("over");
-
-        long result = System.currentTimeMillis() - begin;
-        //executorService.shutdownNow();
-
-        return result;
+        return result.toString();
     }
 
     public static int getRandomIndex() {
-        return (int) (Math.random() * DATA_SIZE);
+        return (int) (Math.random() * DATA_INIT_SIZE);
     }
 
-    public static int getRandomValue() {
-        return (int) (Math.random() * Integer.MAX_VALUE);
-    }
 }
