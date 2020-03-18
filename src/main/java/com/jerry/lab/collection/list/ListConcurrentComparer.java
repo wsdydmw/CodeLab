@@ -63,7 +63,8 @@ public class ListConcurrentComparer {
         new Thread(() -> {
             for (int i = 0; i < readCount; i++) {
                 executorService.submit(() -> {
-                    long value = Long.parseLong(list.get(getRandomIndex()).toString());
+                    int index = getRandomIndex(list);
+                    long value = list.get(index) != null ? list.get(index) : 0L;
                     Utils.calNumber(value);
                     readCountLatch.countDown();
                 });
@@ -91,8 +92,8 @@ public class ListConcurrentComparer {
         return result.toString();
     }
 
-    public static int getRandomIndex() {
-        return (int) (Math.random() * DATA_INIT_SIZE);
+    public static int getRandomIndex(List list) {
+        return (int) (Math.random() * list.size());
     }
 
 }
