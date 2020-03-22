@@ -11,20 +11,20 @@ import java.util.stream.Stream;
 import static com.jerry.lab.common.WritePercentUtils.Result;
 
 /*
-write %	HashMap	Hashtable	ConcurrentHashMap	Collections$SynchronizedMap
-0%	545	1334	526	751
-2%	541(Unsafe)	1670	532	1486
-4%	512(Unsafe)	1929	543	1616
-6%	542(Unsafe)	1873	559	1603
+write%	Hashtable	ConcurrentHashMap	Collections$SynchronizedMap	ConcurrentSkipListMap	Collections$SynchronizedSortedMap
+0%	194	171	134	697	155
+2%	144	129	140	1111	161
+4%	130	117	130	1620	134
+6%	175	129	141	2050	134
  */
 public class HashMapConcurrentComparer {
-    static int DATA_INIT_SIZE = 2000;
-    static int OPERATE_NUM = 1000000;
+    static int DATA_INIT_SIZE = 5000;
+    static int OPERATE_NUM = 100000;
     static int REPEAT_TIME = 3;
     static int MAX_WRITE_PERCENT = 6;
     static Map<Integer, Integer>[] targetObjects
-            = new Map[]{new HashMap(), new TreeMap(), new Hashtable(), new ConcurrentHashMap(),
-            new ConcurrentSkipListMap(), Collections.synchronizedMap(new HashMap<>()), Collections.synchronizedSortedMap(new TreeMap<>())};
+            = new Map[]{new Hashtable(), new ConcurrentHashMap(), Collections.synchronizedMap(new HashMap<>()),
+            new ConcurrentSkipListMap(), Collections.synchronizedSortedMap(new TreeMap<>())};
 
     public static void main(String[] args) {
         new HashMapConcurrentComparer().process();
@@ -102,7 +102,6 @@ public class HashMapConcurrentComparer {
             }).start();
 
             // write thread
-
             new Thread(() -> {
                 for (int i = 0; i < writeCount; i++) {
                     final int index = i;
@@ -120,12 +119,13 @@ public class HashMapConcurrentComparer {
                 e.printStackTrace();
             }
             result.setCostTime(System.currentTimeMillis() - begin);
-            map.clear();
 
             // 3. check result
             if (DATA_INIT_SIZE + writeCount != map.size()) {
                 result.setSafe(DATA_INIT_SIZE + " + " + writeCount + "!=" + map.size());
             }
+            map.clear();
+
             return result;
         }
     }

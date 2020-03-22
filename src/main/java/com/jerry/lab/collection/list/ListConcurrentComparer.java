@@ -122,12 +122,13 @@ public class ListConcurrentComparer {
                 e.printStackTrace();
             }
             result.setCostTime(System.currentTimeMillis() - begin);
-            list.clear();
 
             // 3. check result
             if (DATA_INIT_SIZE + writeCount != list.size()) {
                 result.setSafe("(not thread safe, expect " + DATA_INIT_SIZE + writeCount + " but " + list.size() + ")");
             }
+            list.clear();
+
             return result;
         }
     }
