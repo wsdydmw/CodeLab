@@ -13,7 +13,7 @@ public class WritePercentUtils {
     public static class Result {
         String objectName;
         int writePercent;
-        Long costTime;
+        Long ops;
         String safe = "Safe";
     }
 
@@ -34,7 +34,7 @@ public class WritePercentUtils {
             IntStream.range(0, targetObjects.length).forEachOrdered(index -> {
                 String objectName = Utils.getClassName(targetObjects[index]);
                 List<Result> resultList = (List<Result>)value.get(objectName);
-                long avgCostTime = resultList.stream().collect(Collectors.averagingLong(Result :: getCostTime)).longValue();
+                long avgCostTime = resultList.stream().collect(Collectors.averagingLong(Result :: getOps)).longValue();
                 if (resultList.stream().anyMatch(result -> {return !StringUtils.equalsIgnoreCase(result.getSafe(), "Safe");})) {
                     System.out.print(avgCostTime + "(Unsafe)" + "\t");
                 } else {

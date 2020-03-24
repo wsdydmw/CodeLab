@@ -12,22 +12,24 @@ import static com.jerry.lab.common.WritePercentUtils.Result;
 
 /*
 write%	Hashtable	ConcurrentHashMap	Collections$SynchronizedMap	ConcurrentSkipListMap	Collections$SynchronizedSortedMap
-0%	194	171	134	697	155
-2%	144	129	140	1111	161
-4%	130	117	130	1620	134
-6%	175	129	141	2050	134
+0%	663756	777531	737703	159550	663756
+2%	778623	771428	722158	87796	710907
+4%	669988	810572	639092	78435	710907
+6%	741168	737493	686487	56046	658594
+8%	714285	729282	718436	39440	585638
+10%	655396	747008	745007	37512	688176
  */
-public class HashMapConcurrentComparer {
+public class MapConcurrentComparer {
     static int DATA_INIT_SIZE = 5000;
     static int OPERATE_NUM = 100000;
     static int REPEAT_TIME = 3;
-    static int MAX_WRITE_PERCENT = 6;
+    static int MAX_WRITE_PERCENT = 10;
     static Map<Integer, Integer>[] targetObjects
             = new Map[]{new Hashtable(), new ConcurrentHashMap(), Collections.synchronizedMap(new HashMap<>()),
             new ConcurrentSkipListMap(), Collections.synchronizedSortedMap(new TreeMap<>())};
 
     public static void main(String[] args) {
-        new HashMapConcurrentComparer().process();
+        new MapConcurrentComparer().process();
         System.exit(0);
     }
 
@@ -118,7 +120,7 @@ public class HashMapConcurrentComparer {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            result.setCostTime(System.currentTimeMillis() - begin);
+            result.setOps(OPERATE_NUM * 1000 / (System.currentTimeMillis() - begin));
 
             // 3. check result
             if (DATA_INIT_SIZE + writeCount != map.size()) {

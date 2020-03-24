@@ -6,6 +6,7 @@ import com.jerry.lab.common.WritePercentUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Vector;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -16,19 +17,21 @@ import java.util.stream.Stream;
 import static com.jerry.lab.common.WritePercentUtils.Result;
 
 /*
-write %	ArrayList	Collections$SynchronizedRandomAccessList	CopyOnWriteArrayList
-0%	2460	2694	2529
-2%	2486(Unsafe)	2572	9694
-4%	2527(Unsafe)	2459	332514
-6%	2377(Unsafe)	3714	360131
+write%	Vector	Collections$SynchronizedRandomAccessList	CopyOnWriteArrayList
+0%	709033	682984	674614
+2%	433583	1049110	468939
+4%	724319	1006500	325457
+6%	719086	766644	353371
+8%	740787	1013707	152885
+10%	515329	1160628	181134
  */
 public class ListConcurrentComparer {
     static int DATA_INIT_SIZE = 1000;
-    static int OPERATE_NUM = 5000000;
+    static int OPERATE_NUM = 1000000;
     static int REPEAT_TIME = 3;
-    static int MAX_WRITE_PERCENT = 6;
+    static int MAX_WRITE_PERCENT = 10;
     static List<Long>[] targetObjects
-            = new List[]{new ArrayList(), Collections.synchronizedList(new ArrayList<>()), new CopyOnWriteArrayList()};
+            = new List[]{new Vector(), Collections.synchronizedList(new ArrayList<>()), new CopyOnWriteArrayList()};
 
     public static void main(String[] args) {
         new ListConcurrentComparer().process();
@@ -121,7 +124,7 @@ public class ListConcurrentComparer {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            result.setCostTime(System.currentTimeMillis() - begin);
+            result.setOps(OPERATE_NUM * 1000 / (System.currentTimeMillis() - begin));
 
             // 3. check result
             if (DATA_INIT_SIZE + writeCount != list.size()) {
