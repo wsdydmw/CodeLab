@@ -9,7 +9,7 @@ public class InterruptTest {
         // 主线程休眠2秒，从而确保刚才启动的线程有机会执行一段时间
         try {
             Thread.sleep(2000);
-        }catch(InterruptedException e){
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
         System.out.println("3. in main() - interrupting the thread " + t.getName());
@@ -18,20 +18,20 @@ public class InterruptTest {
     }
 }
 
-class InterruptableThread implements Runnable{
+class InterruptableThread implements Runnable {
 
-    public void run(){
+    public void run() {
         while (!Thread.currentThread().interrupted()) {
             try {
 
-                    System.out.println("2. in run() - "
-                            + Thread.currentThread().getName()
-                            + " going to sleep 20 second, now isInterrupted() is "
-                            + Thread.currentThread().isInterrupted());//false
-                    Thread.sleep(5000);
-                    System.out.println("in run() - "
-                            + Thread.currentThread().getName()
-                            + "woke up");
+                System.out.println("2. in run() - "
+                        + Thread.currentThread().getName()
+                        + " going to sleep 20 second, now isInterrupted() is "
+                        + Thread.currentThread().isInterrupted());//false
+                Thread.sleep(5000);
+                System.out.println("in run() - "
+                        + Thread.currentThread().getName()
+                        + "woke up");
 
             } catch (InterruptedException e) {
                 System.out.println("5. in run() - get InterruptedException， now isInterrupted() is "

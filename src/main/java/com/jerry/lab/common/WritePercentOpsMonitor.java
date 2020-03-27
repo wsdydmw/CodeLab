@@ -8,15 +8,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class WritePercentUtils {
-    @Data
-    public static class Result {
-        String objectName;
-        int writePercent;
-        Long ops;
-        String safe = "Safe";
-    }
-
+public class WritePercentOpsMonitor {
     public static void showResult(Object[] targetObjects, List<Result> results) {
         System.out.println("---- 汇总结果 ----");
         // 标题
@@ -33,9 +25,11 @@ public class WritePercentUtils {
             Map value = entry.getValue();//objectName -> results
             IntStream.range(0, targetObjects.length).forEachOrdered(index -> {
                 String objectName = Utils.getClassName(targetObjects[index]);
-                List<Result> resultList = (List<Result>)value.get(objectName);
-                long avgCostTime = resultList.stream().collect(Collectors.averagingLong(Result :: getOps)).longValue();
-                if (resultList.stream().anyMatch(result -> {return !StringUtils.equalsIgnoreCase(result.getSafe(), "Safe");})) {
+                List<Result> resultList = (List<Result>) value.get(objectName);
+                long avgCostTime = resultList.stream().collect(Collectors.averagingLong(Result::getOps)).longValue();
+                if (resultList.stream().anyMatch(result -> {
+                    return !StringUtils.equalsIgnoreCase(result.getSafe(), "Safe");
+                })) {
                     System.out.print(avgCostTime + "(Unsafe)" + "\t");
                 } else {
                     System.out.print(avgCostTime + "\t");
@@ -44,6 +38,14 @@ public class WritePercentUtils {
             });
             System.out.println();
         });
+    }
+
+    @Data
+    public static class Result {
+        String objectName;
+        int writePercent;
+        Long ops;
+        String safe = "Safe";
     }
 
 

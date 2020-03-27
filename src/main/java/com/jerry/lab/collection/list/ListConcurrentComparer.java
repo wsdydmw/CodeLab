@@ -1,7 +1,7 @@
 package com.jerry.lab.collection.list;
 
 import com.jerry.lab.common.Utils;
-import com.jerry.lab.common.WritePercentUtils;
+import com.jerry.lab.common.WritePercentOpsMonitor;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,7 +14,7 @@ import java.util.concurrent.Executors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-import static com.jerry.lab.common.WritePercentUtils.Result;
+import static com.jerry.lab.common.WritePercentOpsMonitor.Result;
 
 /*
 write%	Vector	Collections$SynchronizedRandomAccessList	CopyOnWriteArrayList
@@ -56,16 +56,16 @@ public class ListConcurrentComparer {
 
         // step2. 开始运行
         System.out.println("--- begin work " + Tasks.size() + " Tasks");
-        List<WritePercentUtils.Result> results = new ArrayList<>();
+        List<WritePercentOpsMonitor.Result> results = new ArrayList<>();
 
         Tasks.stream().forEachOrdered(task -> {
-            WritePercentUtils.Result result = task.process();
+            WritePercentOpsMonitor.Result result = task.process();
             results.add(result);
             System.out.println(result);
         });
 
         // step3. 汇总结果
-        WritePercentUtils.showResult(targetObjects, results);
+        WritePercentOpsMonitor.showResult(targetObjects, results);
     }
 
     private class Task {

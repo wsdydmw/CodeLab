@@ -1,14 +1,14 @@
 package com.jerry.lab.collection.map;
 
 import com.jerry.lab.common.Utils;
-import com.jerry.lab.common.WritePercentUtils;
+import com.jerry.lab.common.WritePercentOpsMonitor;
 
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static com.jerry.lab.common.WritePercentUtils.Result;
+import static com.jerry.lab.common.WritePercentOpsMonitor.Result;
 
 /*
 write%	Hashtable	ConcurrentHashMap	Collections$SynchronizedMap	ConcurrentSkipListMap	Collections$SynchronizedSortedMap
@@ -60,7 +60,7 @@ public class MapConcurrentComparer {
         });
 
         // step3. 汇总结果
-        WritePercentUtils.showResult(targetObjects, results);
+        WritePercentOpsMonitor.showResult(targetObjects, results);
     }
 
     private class Task {
