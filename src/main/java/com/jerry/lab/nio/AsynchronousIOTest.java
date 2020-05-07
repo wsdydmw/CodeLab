@@ -11,107 +11,177 @@ import java.nio.channels.CompletionHandler;
 import java.util.concurrent.*;
 
 public class AsynchronousIOTest {
-    final int clientSize = 50;
-    final CountDownLatch shutDownLatch = new CountDownLatch(clientSize);
+    final byte serverSize = 3;
     final String address = "127.0.0.1";
-    final int port = 8888;
+    final int basePort = 8880;
+    final int networdDelay = 1000;//考虑到测试重点在Client，为了不产生影响，网络延迟统一在server端模拟
+    final int clientProcessDelay = 2000;
+    final int serverProcessDelay = 4000;
+    final CountDownLatch serverLatch = new CountDownLatch(serverSize);
 
     public static void main(String[] args) throws InterruptedException {
         new AsynchronousIOTest().process();
-        System.exit(1);
+        System.exit(0);
     }
 
     public void process() throws InterruptedException {
         ExecutorService executorService = Executors.newCachedThreadPool();
+        ProcessMonitor.begin();
 
-        executorService.execute(new AsynchronousIOTest.AsynchronousServerSocketThread());
+        for (byte i = 1; i <= serverSize; i++) {
+            executorService.execute(new AsynchronousServerSocketThread(i));
+        }
 
-        /*for (int i = 1; i <= clientSize; i++) {
-            Thread.sleep((long) (Math.random() * 1000));
-            executorService.execute(new SelectIOTest.SelectSocketThread(String.valueOf(i)));
-        }*/
+        Thread.sleep(3000);// 等待server启动
+        executorService.execute(new AsynchronousSocketThread());
 
-        shutDownLatch.await();
-        executorService.shutdown();
-        ProcessMonitor.displayUseTime();
-
+        serverLatch.await();
+        ProcessMonitor.displayProcess();
+        executorService.shutdownNow();
         return;
     }
 
+    /**
+     * Server，接受请求，返回自身编号
+     */
     class AsynchronousServerSocketThread implements Runnable {
 
-        AsynchronousChannelGroup group;
+        private AsynchronousChannelGroup group;
         private AsynchronousServerSocketChannel server;
+        private byte order;
+
+        public AsynchronousServerSocketThread(byte order) {
+            this.order = order;
+        }
 
         @Override
         public void run() {
             try {
-                init(port);
-                listen();
-            } catch (IOException | InterruptedException e) {
+                init();
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
 
-        private void init(int port) throws IOException {
+        private void init() throws IOException {
             //ChannelGroup用来管理共享资源
             group = AsynchronousChannelGroup.withCachedThreadPool(Executors.newCachedThreadPool(), 10);
-            server = AsynchronousServerSocketChannel.open(group);
+            server = AsynchronousServerSocketChannel.open(group).bind(new InetSocketAddress(basePort + order));
 
             //通过setOption配置Socket
             server.setOption(StandardSocketOptions.SO_REUSEADDR, true);
             server.setOption(StandardSocketOptions.SO_RCVBUF, 16 * 1024);
 
-            //绑定到指定的主机，端口
-            server.bind(new InetSocketAddress(port));
-            System.out.println("[server] listening on " + port);
-        }
-
-        private void listen() throws InterruptedException {
             //等待连接，并注册CompletionHandler处理连接完成后的操作。
-            server.accept(null, new CompletionHandler<AsynchronousSocketChannel, Object>() {
-                final ByteBuffer buffer = ByteBuffer.allocate(1024);
-
+            server.accept("first connect", new CompletionHandler<AsynchronousSocketChannel, Object>() {
                 @Override
                 public void completed(AsynchronousSocketChannel channel, Object attachment) {
-                    System.out.println("[server] connect is accepted");
-                    buffer.clear();
                     try {
-                        //将socket中的数据读取到buffer中
-                        Future<Integer> future = channel.read(buffer);
-
-                        //阻塞直至future返回
-                        future.get();
-
-                        buffer.flip();
-                        System.out.println("[server] received : " + new String(buffer.array()).trim());
-
-                        //回复客户端
-                        channel.write(ByteBuffer
-                                .wrap(("[server] i have received you message").getBytes()));
-                        buffer.flip();
-                    } catch (InterruptedException | ExecutionException e) {
+                        handleConnect(channel);
+                    } catch (ExecutionException | InterruptedException e) {
                         e.printStackTrace();
-                    } finally {
-                        try {
-                            //关闭处理完的socket，并重新调用accept等待新的连接
-                            channel.close();
-                            server.accept(null, this);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
                     }
                 }
 
                 @Override
                 public void failed(Throwable exc, Object attachment) {
-                    System.out.print("[server] get failed...." + exc.getCause());
+                    System.out.print("get failed. " + exc.getCause());
+                }
+            });
+        }
+
+        private void handleConnect(AsynchronousSocketChannel channel) throws ExecutionException, InterruptedException {
+            while (true) {
+                ByteBuffer buffer = ByteBuffer.allocate(1);
+
+                // 1. 接收请求
+                buffer.clear();
+                Future<Integer> future = channel.read(buffer);
+                future.get();//阻塞
+
+                buffer.flip();
+                byte param = buffer.get();
+                if (param != order) {
+                    System.out.println("order error ");
+                }
+                Thread.sleep(networdDelay);//模拟网络延迟
+                ProcessMonitor.serverReceived(order);
+
+                // 2. 处理请求
+                Thread.sleep(serverProcessDelay);
+
+                // 3. 返回编号
+                ProcessMonitor.serverReturn(order);
+                Thread.sleep(networdDelay);
+                buffer.clear();
+                channel.write(buffer);
+            }
+
+        }
+    }
+
+    /**
+     * client，串行方式向多个server发送请求
+     */
+    class AsynchronousSocketThread implements Runnable {
+
+        private ExecutorService executor;
+
+        @Override
+        public void run() {
+            init();
+            for (byte i = 1; i <= serverSize; i++) {
+                try {
+                    link(i);
+                } catch (InterruptedException | ExecutionException | IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        private void init() {
+            executor = Executors.newCachedThreadPool();
+        }
+
+        private void link(byte order) throws InterruptedException, ExecutionException, IOException {
+            AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open();
+            Future<Void> connect = socketChannel.connect(new InetSocketAddress(address, basePort + order));
+            connect.get();//阻塞
+
+            //连接之后，执行send
+            FutureTask<Integer> futureTask = new FutureTask<>(new Callable<Integer>() {
+                @Override
+                public Integer call() throws Exception {
+                    // 1. 发送请求
+                    ByteBuffer buffer = ByteBuffer.allocate(1);
+                    buffer.put(order);
+
+                    buffer.clear();
+                    socketChannel.write(buffer);
+                    ProcessMonitor.clientSend(order);
+
+                    // 2. 等待结果
+                    buffer.clear();
+                    Future<Integer> read = socketChannel.read(buffer);
+                    read.get();//阻塞
+
+                    socketChannel.read(buffer);
+                    buffer.flip();
+                    ProcessMonitor.clientReceived(buffer.get());
+
+                    // 3. 处理结果
+                    Thread.sleep(clientProcessDelay);
+                    ProcessMonitor.clientProcessed(order);
+
+                    serverLatch.countDown();
+
+                    return 0;
                 }
             });
 
-            //因为AIO不会阻塞调用进程，因此必须在主进程阻塞，才能保持进程存活。
-            group.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
+            executor.submit(futureTask);
         }
+
     }
 }
 
