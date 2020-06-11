@@ -10,24 +10,24 @@ public class ClassLoadTest {
     public static void main(String[] args) throws Exception {
         /** old class loader **/
         ClassLoader oldCl = Thread.currentThread().getContextClassLoader();
-        System.out.println("step1 : get old class loader is " + oldCl + "(parent is " + oldCl.getParent() + ")");
+        System.out.println("step1 : 当前加载器是 " + oldCl + "(父加载器是 " + oldCl.getParent() + ")");
         try {
-            System.out.println("step2 : begin to load class com.jerry.lab.Test");
+            System.out.println("step2 : 开始加载 class com.jerry.lab.Test");
             Class clazz1 = oldCl.loadClass("com.jerry.lab.Test");
         } catch (ClassNotFoundException e) {
-            System.out.println("old class loader can't find com.jerry.lab.Test");
+            System.out.println("当前加载器无法找到 com.jerry.lab.Test");
         }
 
         /** my class loader **/
         ClassLoader myCL = new MyClassLoader();
-        System.out.println("step3 : set new class loader " + myCL + "(parent is " + myCL.getParent() + ") to current thread");
+        System.out.println("step3 : 自定义新加载器 " + myCL + "(父加载器是 " + myCL.getParent() + ")，其修改了加载路径 ");
 
         Class clazz2 = null;
         try {
-            System.out.println("step4 : begin to load class com.jerry.lab.Test");
+            System.out.println("step4 : 开始加载 class com.jerry.lab.Test");
             clazz2 = myCL.loadClass("com.jerry.lab.Test");
         } catch (ClassNotFoundException e) {
-            System.out.println("my class loader can't find com.jerry.lab.Test");
+            System.out.println("当前加载器无法找到 com.jerry.lab.Test");
         }
 
         Object obj2 = clazz2.newInstance();
@@ -46,18 +46,19 @@ public class ClassLoadTest {
         obj2 = null;
         helloMethod2 = null;
         System.gc();
-        System.out.println("unload classes loaded by my class loader");
+        System.out.println("卸载通过自定义加载器加载的类");
 
         /** reload **/
-        Thread.sleep(20 * 1000);//需要手动修改文件名
+        Thread.sleep(20 * 1000);
+        System.out.println("手动修改class文件");
         ClassLoader newCL = new MyClassLoader();
 
         Class clazz3 = null;
         try {
-            System.out.println("step5 : begin to reload class com.jerry.lab.Test");
+            System.out.println("step5 : 重新加载 class com.jerry.lab.Test");
             clazz3 = newCL.loadClass("com.jerry.lab.Test");
         } catch (ClassNotFoundException e) {
-            System.out.println("my class loader can't find com.jerry.lab.Test");
+            System.out.println("当前加载器无法找到 com.jerry.lab.Test");
         }
 
         Object obj3 = clazz3.newInstance();
