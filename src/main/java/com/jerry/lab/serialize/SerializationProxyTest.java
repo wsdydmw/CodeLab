@@ -10,19 +10,19 @@ public class SerializationProxyTest {
     public static void main(String[] args) {
         Date now = new Date();
         Date yesterday = Date.from(now.toInstant().minus(1, ChronoUnit.DAYS));
-        Period period1 = new Period(yesterday, now);
+        PeriodWithProxy period1 = new PeriodWithProxy(yesterday, now);
 
         SerializeUtil.serialize(period1, "files/serialize/period");
         SerializeUtil.<Period>deserialize("files/serialize/period");
     }
 }
 
-class Period implements Serializable {
+class PeriodWithProxy implements Serializable {
     private static final long serialVersionUID = 1L;
     private final Date start;
     private final Date end;
 
-    public Period(Date start, Date end) {
+    public PeriodWithProxy(Date start, Date end) {
         //进行有效性验证
         if (null == start || null == end || start.after(end)) {
             throw new IllegalArgumentException("请传入正确的时间区间!");
@@ -59,7 +59,7 @@ class Period implements Serializable {
         private final Date start;
         private final Date end;
 
-        SerializabtionProxy(Period p) {
+        SerializabtionProxy(PeriodWithProxy p) {
             this.start = p.start;
             this.end = p.end;
         }
@@ -74,19 +74,3 @@ class Period implements Serializable {
 
     }
 }
-
-/*class Period implements Serializable {
-    private static final long serialVersionUID = 1L;
-    private final Date start;
-    private final Date end;
-
-    public Period(Date start, Date end) {
-        this.start = start;
-        this.end = end;
-    }
-
-    @Override
-    public String toString() {
-        return "起始时间：" + start + " , 结束时间：" + end;
-    }
-}*/
