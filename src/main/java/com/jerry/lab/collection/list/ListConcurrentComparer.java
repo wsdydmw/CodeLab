@@ -11,6 +11,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
@@ -18,16 +19,16 @@ import static com.jerry.lab.common.WritePercentOpsMonitor.Result;
 
 /*
 write%	Vector	Collections$SynchronizedRandomAccessList	CopyOnWriteArrayList
-0%	709033	682984	674614
-2%	433583	1049110	468939
-4%	724319	1006500	325457
-6%	719086	766644	353371
-8%	740787	1013707	152885
-10%	515329	1160628	181134
+0%	675216	753984	749478
+2%	649715	917835	663781
+4%	695297	946069	506723
+6%	462827	945891	382714
+8%	751512	893292	243057
+10%	559448	1085617	142344
  */
 public class ListConcurrentComparer {
     static int DATA_INIT_SIZE = 1000;
-    static int OPERATE_NUM = 1000000;
+    static int OPERATE_NUM = 1000 * 1000;
     static int REPEAT_TIME = 3;
     static int MAX_WRITE_PERCENT = 10;
     static List<Long>[] targetObjects
@@ -58,10 +59,11 @@ public class ListConcurrentComparer {
         System.out.println("--- begin work " + Tasks.size() + " Tasks");
         List<WritePercentOpsMonitor.Result> results = new ArrayList<>();
 
+        AtomicInteger order = new AtomicInteger(1);
         Tasks.stream().forEachOrdered(task -> {
             WritePercentOpsMonitor.Result result = task.process();
             results.add(result);
-            System.out.println(result);
+            System.out.println(order.getAndIncrement() + " : " + result);
         });
 
         // step3. 汇总结果
@@ -90,44 +92,42 @@ public class ListConcurrentComparer {
 
             // 2. simulate concurrent
             ExecutorService executorService = Executors.newCachedThreadPool();
-            int readCount = OPERATE_NUM * (100 - writePercent) / 100;
-            int writeCount = OPERATE_NUM * writePercent / 100;
-            CountDownLatch readCountLatch = new CountDownLatch(readCount);
-            CountDownLatch writeCountLatch = new CountDownLatch(writeCount);
+            AtomicInteger writeCount = new AtomicInteger(0);
+            CountDownLatch operatorCountLatch = new CountDownLatch(OPERATE_NUM);
 
             long begin = System.currentTimeMillis();
-            // read thread
-            new Thread(() -> {
-                for (int i = 0; i < readCount; i++) {
+            Stream.generate(() -> {
+                if (Math.random() * 100 < writePercent) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            }).limit(OPERATE_NUM).forEach(flag -> {
+                if (flag == 1) {// add
+                    executorService.submit(() -> {
+                        list.add(0L);
+                        writeCount.addAndGet(1);
+                        operatorCountLatch.countDown();
+                    });
+                } else {// read
                     executorService.submit(() -> {
                         int index = getRandomIndex(list);
                         long value = list.get(index) != null ? list.get(index) : 0L;
                         Utils.calNumber(value);
-                        readCountLatch.countDown();
+                        operatorCountLatch.countDown();
                     });
                 }
-            }).start();
-
-            // write thread
-            new Thread(() -> {
-                for (int i = 0; i < writeCount; i++) {
-                    executorService.submit(() -> {
-                        list.add(0L);
-                        writeCountLatch.countDown();
-                    });
-                }
-            }).start();
+            });
 
             try {
-                readCountLatch.await();
-                writeCountLatch.await();
+                operatorCountLatch.await();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
             result.setOps(OPERATE_NUM * 1000 / (System.currentTimeMillis() - begin));
 
             // 3. check result
-            if (DATA_INIT_SIZE + writeCount != list.size()) {
+            if (DATA_INIT_SIZE + writeCount.get() != list.size()) {
                 result.setSafe("(not thread safe, expect " + DATA_INIT_SIZE + writeCount + " but " + list.size() + ")");
             }
             list.clear();
