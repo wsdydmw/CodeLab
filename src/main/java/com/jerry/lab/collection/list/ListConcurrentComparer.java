@@ -12,6 +12,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
@@ -29,8 +30,8 @@ write%	Vector	Collections$SynchronizedRandomAccessList	CopyOnWriteArrayList
 public class ListConcurrentComparer {
     static int DATA_INIT_SIZE = 1000;
     static int OPERATE_NUM = 1000 * 1000;
-    static int REPEAT_TIME = 3;
-    static int MAX_WRITE_PERCENT = 10;
+    static int REPEAT_TIME = 1;
+    static int MAX_WRITE_PERCENT = 6;
     static List<Long>[] targetObjects
             = new List[]{new Vector(), Collections.synchronizedList(new ArrayList<>()), new CopyOnWriteArrayList()};
 
@@ -94,8 +95,9 @@ public class ListConcurrentComparer {
             ExecutorService executorService = Executors.newCachedThreadPool();
             AtomicInteger writeCount = new AtomicInteger(0);
             CountDownLatch operatorCountLatch = new CountDownLatch(OPERATE_NUM);
+            AtomicLong readNano = new AtomicLong(0);
+            AtomicLong writeNano = new AtomicLong(0);
 
-            long begin = System.currentTimeMillis();
             Stream.generate(() -> {
                 if (Math.random() * 100 < writePercent) {
                     return 1;
@@ -105,15 +107,19 @@ public class ListConcurrentComparer {
             }).limit(OPERATE_NUM).forEach(flag -> {
                 if (flag == 1) {// add
                     executorService.submit(() -> {
+                        long begin = System.nanoTime();
                         list.add(0L);
                         writeCount.addAndGet(1);
+                        writeNano.addAndGet(System.nanoTime() - begin);
                         operatorCountLatch.countDown();
                     });
                 } else {// read
                     executorService.submit(() -> {
+                        long begin = System.nanoTime();
                         int index = getRandomIndex(list);
                         long value = list.get(index) != null ? list.get(index) : 0L;
                         Utils.calNumber(value);
+                        readNano.addAndGet(System.nanoTime() - begin);
                         operatorCountLatch.countDown();
                     });
                 }
@@ -124,7 +130,16 @@ public class ListConcurrentComparer {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            result.setOps(OPERATE_NUM * 1000 / (System.currentTimeMillis() - begin));
+            double readOps = OPERATE_NUM;
+            readOps *= (double) (100 - writePercent) / 100;
+            readOps /= (double) readNano.get() / 1000000000;
+            result.setReadOps((long) readOps);
+            if (writePercent != 0) {
+                double writeOps = OPERATE_NUM;
+                writeOps *= (double) writePercent / 100;
+                writeOps /= (double) writeNano.get() / 1000000000;
+                result.setWriteOps((long) writeOps);
+            }
 
             // 3. check result
             if (DATA_INIT_SIZE + writeCount.get() != list.size()) {

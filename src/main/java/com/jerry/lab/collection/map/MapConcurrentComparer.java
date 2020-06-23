@@ -120,7 +120,7 @@ public class MapConcurrentComparer {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            result.setOps(OPERATE_NUM * 1000 / (System.currentTimeMillis() - begin));
+            //result.setOps(OPERATE_NUM * 1000 / (System.currentTimeMillis() - begin));
 
             // 3. check result
             if (DATA_INIT_SIZE + writeCount != map.size()) {
