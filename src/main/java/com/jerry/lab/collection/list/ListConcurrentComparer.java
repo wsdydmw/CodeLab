@@ -19,19 +19,18 @@ import java.util.stream.Stream;
 import static com.jerry.lab.common.WritePercentOpsMonitor.Result;
 
 /*
-write%	Vector	Collections$SynchronizedRandomAccessList	CopyOnWriteArrayList
-0%	675216	753984	749478
-2%	649715	917835	663781
-4%	695297	946069	506723
-6%	462827	945891	382714
-8%	751512	893292	243057
-10%	559448	1085617	142344
+write%	Vector_READ	Collections$SynchronizedRandomAccessList_READ	CopyOnWriteArrayList_READ	Vector_WRITE	Collections$SynchronizedRandomAccessList_WRITE	CopyOnWriteArrayList_WRITE
+0%	694050	1576838	1985600	-1	-1	-1
+2%	500748	1061858	2541002	166207	164128	48913
+4%	170225	323288	2663268	78243	83898	7622
+6%	73473	17683	2825641	37415	15723	17
+8%	10254	492	2279368	9180	581	4
  */
 public class ListConcurrentComparer {
     static int DATA_INIT_SIZE = 1000;
     static int OPERATE_NUM = 1000 * 1000;
-    static int REPEAT_TIME = 1;
-    static int MAX_WRITE_PERCENT = 6;
+    static int REPEAT_TIME = 3;
+    static int MAX_WRITE_PERCENT = 10;
     static List<Long>[] targetObjects
             = new List[]{new Vector(), Collections.synchronizedList(new ArrayList<>()), new CopyOnWriteArrayList()};
 
@@ -108,7 +107,7 @@ public class ListConcurrentComparer {
                 if (flag == 1) {// add
                     executorService.submit(() -> {
                         long begin = System.nanoTime();
-                        list.add(0L);
+                        list.add((int) (Math.random() * DATA_INIT_SIZE), 0L);
                         writeCount.addAndGet(1);
                         writeNano.addAndGet(System.nanoTime() - begin);
                         operatorCountLatch.countDown();
