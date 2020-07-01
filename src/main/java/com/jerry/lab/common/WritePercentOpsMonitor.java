@@ -3,6 +3,7 @@ package com.jerry.lab.common;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -19,13 +20,14 @@ public class WritePercentOpsMonitor {
         });
         // 1.2 _write
         IntStream.range(0, targetObjects.length).forEachOrdered(index -> {
-            System.out.print(Utils.getClassName(targetObjects[index]) + "_WRITE" + "\t");
+            System.out.print(Utils.getClassName(targetObjects[index]) + "_WRITE");
+            System.out.print((index == targetObjects.length - 1 ? "" : "\t"));
         });
         System.out.println();
 
         // 每行 如：0%	675216	753984	749478
         results.stream().collect(Collectors.groupingBy(Result::getWritePercent, Collectors.groupingBy(Result::getObjectName, Collectors.toList())))
-                .entrySet().forEach(entry -> {
+                .entrySet().stream().sorted(Comparator.comparingInt(Map.Entry::getKey)).forEach(entry -> {
             System.out.print(entry.getKey() + "%\t");//write percent
             Map value = entry.getValue();//objectName -> results
             // read ops
@@ -51,10 +53,11 @@ public class WritePercentOpsMonitor {
                 if (resultList.stream().anyMatch(result -> {
                     return !StringUtils.equalsIgnoreCase(result.getSafe(), "Safe");
                 })) {
-                    System.out.print(avgCostTime + "(Unsafe)" + "\t");
+                    System.out.print(avgCostTime + "(Unsafe)");
                 } else {
-                    System.out.print(avgCostTime + "\t");
+                    System.out.print(avgCostTime);
                 }
+                System.out.print((index == targetObjects.length - 1 ? "" : "\t"));
 
             });
             System.out.println();
