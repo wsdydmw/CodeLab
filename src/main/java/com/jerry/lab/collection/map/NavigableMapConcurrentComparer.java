@@ -4,7 +4,7 @@ import com.jerry.lab.common.Utils;
 import com.jerry.lab.common.WritePercentOpsMonitor;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -16,30 +16,26 @@ import java.util.stream.Stream;
 import static com.jerry.lab.common.WritePercentOpsMonitor.Result;
 
 /*
-write%	Hashtable_READ	ConcurrentHashMap_READ	Collections$SynchronizedMap_READ	Hashtable_WRITE	ConcurrentHashMap_WRITE	Collections$SynchronizedMap_WRITE
-0%	1775102	2990821	2451285	-1	-1	-1
-5%	1812679	3017402	2659489	4244577	2869182	4637118
-10%	1806493	3170195	2528182	4133195	3124682	4243413
-15%	1770566	2698368	2633446	3894125	2101582	4479521
-20%	1241907	3270604	2524082	2906809	2511088	4711154
-25%	1651310	3172793	2372188	4209911	2708902	3951802
-30%	1778558	3042606	2095919	4576898	3126741	3458498
+write%	ConcurrentSkipListMap_READ	Collections$SynchronizedNavigableMap_READ	ConcurrentSkipListMap_WRITE	Collections$SynchronizedNavigableMap_WRITE
+0%	25303	1938888	-1	-1
+5%	13496	1772283	1142318	1325800
+10%	10538	1550045	1255094	1309325
+15%	10559	1220090	1333269	1159242
+20%	9714	1521662	1356950	1467501
+25%	7487	1410742	1338292	1440724
+30%	7857	953247	1219862	1018926
  */
-public class MapConcurrentComparer {
+public class NavigableMapConcurrentComparer {
     static int DATA_INIT_SIZE = 10000;
     static int OPERATE_NUM = 100000;
     static int REPEAT_TIME = 3;
     static int MAX_WRITE_PERCENT = 30;
-    static Map<Integer, Integer>[] targetObjects
-            = new Map[]{new Hashtable(), new ConcurrentHashMap(), Collections.synchronizedMap(new HashMap<>())};
+    static NavigableMap<Integer, Integer>[] targetObjects
+            = new NavigableMap[]{new ConcurrentSkipListMap(), Collections.synchronizedNavigableMap(new TreeMap<>())};
 
     public static void main(String[] args) {
-        new MapConcurrentComparer().process();
+        new NavigableMapConcurrentComparer().process();
         System.exit(0);
-    }
-
-    public static int getRandomKey(Map map) {
-        return (int) (Math.random() * map.size());
     }
 
     public void process() {
@@ -70,10 +66,10 @@ public class MapConcurrentComparer {
     }
 
     private class Task {
-        Map<Integer, Integer> map;
+        NavigableMap<Integer, Integer> map;
         int writePercent;
 
-        public Task(Map<Integer, Integer> map, int writePercent) {
+        public Task(NavigableMap<Integer, Integer> map, int writePercent) {
             this.map = map;
             this.writePercent = writePercent;
         }
@@ -114,8 +110,8 @@ public class MapConcurrentComparer {
                 } else {// read
                     executorService.submit(() -> {
                         long begin = System.nanoTime();
-                        int key = getRandomKey(map);
-                        Integer value = map.get(key);
+                        int key = (int) (Math.random() * DATA_INIT_SIZE);
+                        Integer value = map.ceilingKey(key);
                         if (value != null) {
                             Utils.calNumber(value);
                         }
