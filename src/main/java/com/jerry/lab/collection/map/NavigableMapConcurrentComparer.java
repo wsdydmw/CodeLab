@@ -1,56 +1,50 @@
-package com.jerry.lab.collection.list;
+package com.jerry.lab.collection.map;
 
 import com.jerry.lab.common.Utils;
 import com.jerry.lab.common.WritePercentOpsMonitor;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Vector;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.*;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.LongStream;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static com.jerry.lab.common.WritePercentOpsMonitor.Result;
 
 /*
-write%	Vector_READ	Collections$SynchronizedRandomAccessList_READ	CopyOnWriteArrayList_READ	Vector_WRITE	Collections$SynchronizedRandomAccessList_WRITE	CopyOnWriteArrayList_WRITE
-0%	1877370	4000096	4897791	-1	-1	-1
-2%	1319563	2385534	6577924	210632	211881	47148
-4%	144834	594788	7398435	61293	105870	2008
-6%	15509	78187	7377349	13126	37628	9
-8%	588	1207	8988544	610	1147	2
-10%	81	128	7732372	84	128	0
+write%	ConcurrentSkipListMap_READ	Collections$SynchronizedNavigableMap_READ	ConcurrentSkipListMap_WRITE	Collections$SynchronizedNavigableMap_WRITE
+0%	25303	1938888	-1	-1
+5%	13496	1772283	1142318	1325800
+10%	10538	1550045	1255094	1309325
+15%	10559	1220090	1333269	1159242
+20%	9714	1521662	1356950	1467501
+25%	7487	1410742	1338292	1440724
+30%	7857	953247	1219862	1018926
  */
-public class ListConcurrentComparer {
-    static int DATA_INIT_SIZE = 1000;
-    static int OPERATE_NUM = 1000 * 1000;
+public class NavigableMapConcurrentComparer {
+    static int DATA_INIT_SIZE = 10000;
+    static int OPERATE_NUM = 100000;
     static int REPEAT_TIME = 3;
-    static int MAX_WRITE_PERCENT = 10;
-    static List<Long>[] targetObjects
-            = new List[]{new Vector(), Collections.synchronizedList(new ArrayList<>()), new CopyOnWriteArrayList()};
+    static int MAX_WRITE_PERCENT = 30;
+    static NavigableMap<Integer, Integer>[] targetObjects
+            = new NavigableMap[]{new ConcurrentSkipListMap(), Collections.synchronizedNavigableMap(new TreeMap<>())};
 
     public static void main(String[] args) {
-        new ListConcurrentComparer().process();
+        new NavigableMapConcurrentComparer().process();
         System.exit(0);
-    }
-
-    public static int getRandomIndex(List list) {
-        return (int) (Math.random() * list.size());
     }
 
     public void process() {
         // step1. 增加重复次数并故意乱序执行顺序
-        List<ListConcurrentComparer.Task> Tasks = new ArrayList<>();
+        List<Task> Tasks = new ArrayList<>();
         Stream.of(targetObjects).forEach(object -> {
-            for (int writeP = 0; writeP <= MAX_WRITE_PERCENT; writeP += 2) {
+            for (int writeP = 0; writeP <= MAX_WRITE_PERCENT; writeP += 5) {
                 for (int i = 1; i <= REPEAT_TIME; i++) {
-                    Tasks.add(new ListConcurrentComparer.Task(object, writeP));
+                    Tasks.add(new Task(object, writeP));
                 }
             }
         });
@@ -58,11 +52,11 @@ public class ListConcurrentComparer {
 
         // step2. 开始运行
         System.out.println("--- begin work " + Tasks.size() + " Tasks");
-        List<WritePercentOpsMonitor.Result> results = new ArrayList<>();
+        List<Result> results = new ArrayList<>();
 
         AtomicInteger order = new AtomicInteger(1);
         Tasks.stream().forEachOrdered(task -> {
-            WritePercentOpsMonitor.Result result = task.process();
+            Result result = task.process();
             results.add(result);
             System.out.println(order.getAndIncrement() + " : " + result);
         });
@@ -72,23 +66,23 @@ public class ListConcurrentComparer {
     }
 
     private class Task {
-        List<Long> list;
+        NavigableMap<Integer, Integer> map;
         int writePercent;
 
-        public Task(List<Long> list, int writePercent) {
-            this.list = list;
+        public Task(NavigableMap<Integer, Integer> map, int writePercent) {
+            this.map = map;
             this.writePercent = writePercent;
         }
 
         public Result process() {
             Result result = new Result();
-            result.setObjectName(Utils.getClassName(list));
+            result.setObjectName(Utils.getClassName(map));
             result.setWritePercent(writePercent);
 
             // 1. init data
-            list.clear();
-            LongStream.range(0, DATA_INIT_SIZE).forEach(value -> {
-                list.add(value);
+            map.clear();
+            IntStream.range(0, DATA_INIT_SIZE).forEach(value -> {
+                map.put(value, value);
             });
 
             // 2. simulate concurrent
@@ -105,25 +99,28 @@ public class ListConcurrentComparer {
                     return 0;
                 }
             }).limit(OPERATE_NUM).forEach(flag -> {
-                if (flag == 1) {// add
+                if (flag == 1) {// put
+                    int index = writeCount.addAndGet(1);
                     executorService.submit(() -> {
                         long begin = System.nanoTime();
-                        list.add((int) (Math.random() * DATA_INIT_SIZE), 0L);
-                        writeCount.addAndGet(1);
+                        map.put(DATA_INIT_SIZE + (int) (Math.random() * DATA_INIT_SIZE), DATA_INIT_SIZE);
                         writeNano.addAndGet(System.nanoTime() - begin);
                         operatorCountLatch.countDown();
                     });
                 } else {// read
                     executorService.submit(() -> {
                         long begin = System.nanoTime();
-                        int index = getRandomIndex(list);
-                        long value = list.get(index) != null ? list.get(index) : 0L;
-                        Utils.calNumber(value);
+                        int key = (int) (Math.random() * DATA_INIT_SIZE);
+                        Integer value = map.ceilingKey(key);
+                        if (value != null) {
+                            Utils.calNumber(value);
+                        }
                         readNano.addAndGet(System.nanoTime() - begin);
                         operatorCountLatch.countDown();
                     });
                 }
             });
+
 
             try {
                 operatorCountLatch.await();
@@ -142,13 +139,17 @@ public class ListConcurrentComparer {
             }
 
             // 3. check result
-            if (DATA_INIT_SIZE + writeCount.get() != list.size()) {
-                result.setSafe("(not thread safe, expect " + DATA_INIT_SIZE + writeCount + " but " + list.size() + ")");
-            }
-            list.clear();
+            /*if (DATA_INIT_SIZE + writeCount.get() != map.size()) {
+                result.setSafe(DATA_INIT_SIZE + " + " + writeCount + "!=" + map.size());
+            }*/
+            map.clear();
 
             return result;
         }
     }
 
 }
+
+
+
+
