@@ -50,7 +50,7 @@ class Producer extends Thread {
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
-                    System.out.println(super.getName() + " get lock and notified");//注意执行到这一步的，都是已经获取了queue对象锁
+                    System.out.println(super.getName() + " notified and get lock");//注意执行到这一步的，肯定是获取了queue对象锁的
                 }
 
                 try {
@@ -95,7 +95,7 @@ class Consumer extends Thread {
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
-                    System.out.println(super.getName() + " get lock and notified");//注意执行到这一步的，都是已经获取了queue对象锁
+                    System.out.println(super.getName() + " notified and get lock");//注意执行到这一步的，肯定是获取了queue对象锁的
                 }
 
                 try {
