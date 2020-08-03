@@ -1,6 +1,8 @@
 package com.jerry.lab.concurrent.thread;
 
-public class ThreadLocalTest {
+public class ThreadLocalTest1 {
+    static int THREAD_NUM = 5;
+
     //创建一个Integer型的线程本地变量
     public static final ThreadLocal<Integer> localCount = new ThreadLocal<Integer>() {
         @Override
@@ -9,10 +11,9 @@ public class ThreadLocalTest {
         }
     };
 
-    public static void main(String[] args) throws InterruptedException {
-        int thread_num = 5;
-        Thread[] threads = new Thread[thread_num];
-        for (int j = 0; j < thread_num; j++) {
+    public static void main(String[] args) {
+        Thread[] threads = new Thread[THREAD_NUM];
+        for (int j = 0; j < THREAD_NUM; j++) {
             final int addCount = j;
             threads[j] = new Thread(() -> {
                 //获取当前线程的本地变量
